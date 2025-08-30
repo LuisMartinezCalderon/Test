@@ -1,27 +1,44 @@
-// use an integer for version numbers
-version = 3
+plugins {
+    id("com.android.library")
+    kotlin("android")
+}
 
+android {
+    namespace = "com.mundodonghua"
 
-cloudstream {
-    language = "es"
-    // All of these properties are optional, you can safely remove them
+    compileSdk = 33
 
-    //description = "Lorem Ipsum"
-    authors = listOf("Stormunblessed")
+    defaultConfig {
+        minSdk = 21
+        targetSdk = 33
+        versionCode = 1
+        versionName = "1.0"
+    }
 
-    /**
-     * Status int as the following:
-     * 0: Down
-     * 1: Ok
-     * 2: Slow
-     * 3: Beta only
-     * */
-    status = 1 // will be 3 if unspecified
-    tvTypes = listOf(
-        "Anime",
-        "OVA",
-        "AnimeMovie",
-    )
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+    }
 
-    iconUrl = "https://www.google.com/s2/favicons?domain=mundodonghua.com&sz=%size%"
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
+
+    buildTypes {
+        release {
+            isMinifyEnabled = false
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+        }
+    }
+}
+
+dependencies {
+    // API principal de CloudStream (ajusta versión si usas otra)
+    implementation("com.lagradost:cloudstream3:3.6.2")
+
+    // Kotlin stdlib
+    implementation("org.jetbrains.kotlin:kotlin-stdlib:1.9.23")
 }
