@@ -11,8 +11,7 @@ android {
     defaultConfig {
         minSdk = 21
         targetSdk = 33
-        versionCode = 1
-        versionName = "1.0"
+        // 👇 NO uses versionCode ni versionName en librerías
     }
 
     compileOptions {
@@ -36,7 +35,7 @@ android {
 }
 
 dependencies {
-    // API principal de CloudStream (ajusta versión si usas otra)
+    // API de Cloudstream
     implementation("com.lagradost:cloudstream3:3.6.2")
 
     // Kotlin stdlib
