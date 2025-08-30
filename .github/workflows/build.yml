@@ -1,4 +1,4 @@
-name: Build & Release MundoDonghua Extension
+name: Build MundoDonghua Extension
 
 on:
   push:
@@ -26,35 +26,39 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      # 3. Da permisos a gradlew
+      # 3. Instala SDK Android 33 y build-tools 33.0.2
+      - name: Install Android SDK 33
+        run: |
+          yes | sdkmanager --licenses
+          sdkmanager "platforms;android-33" "build-tools;33.0.2"
+
+      # 4. Da permisos a gradlew
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      # 4. Compila con Gradle
-      - name: Build with Gradle
-        run: ./gradlew build
+      # 5. Compila SOLO MundoDonghua
+      - name: Build MundoDonghua
+        run: ./gradlew :MundoDonghuaProvider:assembleRelease --stacktrace --warning-mode all
 
-      # 5. Sube como artifact
-      - name: Upload Extension Artifact
+      # 6. Sube el artefacto
+      - name: Upload Extension
         uses: actions/upload-artifact@v4
         with:
           name: MundoDonghua
-          path: build/libs/*.cs3
+          path: MundoDonghuaProvider/build/libs/*.cs3
 
-      # 6. Crea/actualiza un Release "latest"
+      # 7. Crea o actualiza Release "latest"
       - name: Create or Update Release
         uses: softprops/action-gh-release@v2
         with:
-          files: build/libs/*.cs3
+          files: MundoDonghuaProvider/build/libs/*.cs3
           name: "MundoDonghua Extension"
           tag_name: latest
-          prerelease: false
-          draft: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # 7. Genera la attestation
+      # 8. Genera la attestation
       - name: Attest Build Provenance
         uses: actions/attest-build-provenance@v1
         with:
-          subject-path: build/libs/*.cs3
+          subject-path: MundoDonghuaProvider/build/libs/*.cs3
