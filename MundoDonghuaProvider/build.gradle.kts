@@ -1,5 +1,6 @@
 plugins {
-    id("com.lagradost.cloudstream3.gradle") version "1.0.0"
+    id("com.android.library")
+    kotlin("android")
 }
 
 android {
@@ -22,5 +23,6 @@ android {
 }
 
 dependencies {
+    // No pongas cloudstream3 aquí, ya lo provee el plugin raíz
     implementation("org.jetbrains.kotlin:kotlin-stdlib:1.9.23")
 }
