@@ -1,17 +1,14 @@
 plugins {
-    id("com.android.library")
-    kotlin("android")
+    id("com.lagradost.cloudstream3.gradle") version "1.0.0"
 }
 
 android {
     namespace = "com.mundodonghua"
-
     compileSdk = 33
 
     defaultConfig {
         minSdk = 21
         targetSdk = 33
-        // 🚫 Sin versionCode / versionName (solo para aplicaciones)
     }
 
     compileOptions {
@@ -22,22 +19,8 @@ android {
     kotlinOptions {
         jvmTarget = "1.8"
     }
-
-    buildTypes {
-        release {
-            isMinifyEnabled = false
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
-        }
-    }
 }
 
 dependencies {
-    // API de CloudStream
-    implementation("com.lagradost:cloudstream3:3.6.2")
-
-    // Kotlin stdlib
     implementation("org.jetbrains.kotlin:kotlin-stdlib:1.9.23")
 }
