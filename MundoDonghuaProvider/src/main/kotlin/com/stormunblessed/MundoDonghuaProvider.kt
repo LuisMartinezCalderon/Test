@@ -181,8 +181,8 @@ class MundoDonghuaProvider : MainAPI() {
                         val newUrl = url.replace("https://sbbrisk.com","https://watchsb.com")
                         loadExtractor(newUrl, data, subtitleCallback, callback)
                     }
-                    if (unpack.contains("protea_tab")) {
-                        val protearegex = Regex("protea_tab.*slug.*\\\"(.*)\\\".*,type")
+                    if (unpack.contains("tamamo_tab")) {
+                        val protearegex = Regex("tamamo_tab.*slug.*\\\"(.*)\\\".*,type")
                         val ssee = protearegex.find(unpack)?.destructured?.component1()
                         if (!ssee.isNullOrEmpty()) {
                             val aa = app.get("$mainUrl/api_donghua.php?slug=$ssee", headers = reqHEAD).text
