@@ -1,118 +1,208 @@
 package com.stormunblessed
 
+import com.fasterxml.jackson.annotation.JsonProperty
 import com.lagradost.cloudstream3.*
-import com.lagradost.cloudstream3.utils.*
-import org.jsoup.nodes.Element
+import com.lagradost.cloudstream3.utils.ExtractorLink
+import com.lagradost.cloudstream3.utils.M3u8Helper.Companion.generateM3u8
+import com.lagradost.cloudstream3.utils.getAndUnpack
+import com.lagradost.cloudstream3.utils.loadExtractor
+import java.util.EnumSet
 
 class MundoDonghuaProvider : MainAPI() {
+
     override var mainUrl = "https://www.mundodonghua.com"
     override var name = "MundoDonghua"
     override var lang = "es"
+
     override val hasMainPage = true
     override val hasChromecastSupport = true
     override val hasDownloadSupport = true
+
     override val supportedTypes = setOf(TvType.Anime)
 
-    override val mainPage = mainPageOf(
-        "lista-donghuas" to "Donghuas",
-    )
+    // ===================== MAIN PAGE =====================
 
-    override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse {
-        val document = app.get("$mainUrl/${request.data}?page=$page").documentLarge
+    override suspend fun getMainPage(
+        page: Int,
+        request: MainPageRequest
+    ): HomePageResponse {
 
-        val home = document.select("div.row .col-xs-4").mapNotNull { it.toSearchResult() }
+        val items = mutableListOf<HomePageList>()
 
-        return newHomePageResponse(
-            list = HomePageList(
-                name = request.name,
-                list = home,
-                isHorizontalImages = false
-            ),
-            hasNext = true
-        )
+        val latest = app.get(mainUrl).document
+            .select("div.row .col-xs-4")
+            .map {
+                val title = it.selectFirst("h5")?.text() ?: return@map null
+                val poster = it.selectFirst(".fit-1 img")?.attr("src")
+                val href = it.selectFirst("a")?.attr("href") ?: return@map null
+
+                val cleanUrl = href
+                    .replace(Regex("(\\/\\d+$)"), "")
+                    .replace("/ver/", "/donghua/")
+
+                val dubStatus =
+                    if (title.contains("Latino") || title.contains("Castellano"))
+                        DubStatus.Dubbed
+                    else
+                        DubStatus.Subbed
+
+                newAnimeSearchResponse(
+                    title.replace(Regex("Episodio\\s*\\d+"), "").trim(),
+                    fixUrl(cleanUrl)
+                ) {
+                    posterUrl = fixUrl(poster)
+                    addDubStatus(dubStatus)
+                }
+            }
+            .filterNotNull()
+
+        items.add(HomePageList("Últimos episodios", latest))
+
+        return HomePageResponse(items)
     }
 
-    private fun Element.toSearchResult(): SearchResponse? {
-        val title = this.selectFirst("h5")?.text() ?: return null
-        val href = fixUrl(this.selectFirst("a")?.attr("href") ?: return null)
-        val poster = fixUrlNull(this.selectFirst(".fit-1 img")?.attr("src"))
+    // ===================== SEARCH =====================
 
-        return newAnimeSearchResponse(title, href) {
-            this.posterUrl = poster
-            val epNum = Regex("((\\d+)$)").find(title)?.value?.toIntOrNull()
-            val dubstat = if (title.contains("Latino") || title.contains("Castellano")) DubStatus.Dubbed else DubStatus.Subbed
-            addDubStatus(dubstat, epNum)
-        }
+    override suspend fun search(query: String): List<SearchResponse> {
+        return app.get("$mainUrl/busquedas/$query").document
+            .select(".col-xs-4")
+            .map {
+                val title = it.selectFirst(".fs-14")?.text() ?: return@map null
+                val href = it.selectFirst("a")?.attr("href") ?: return@map null
+                val poster = it.selectFirst(".fit-1 img")?.attr("src")
+
+                AnimeSearchResponse(
+                    title,
+                    fixUrl(href),
+                    name,
+                    TvType.Anime,
+                    fixUrl(poster),
+                    null,
+                    if (title.contains("Latino") || title.contains("Castellano"))
+                        EnumSet.of(DubStatus.Dubbed)
+                    else
+                        EnumSet.of(DubStatus.Subbed),
+                )
+            }
+            .filterNotNull()
     }
 
-    override suspend fun search(query: String, page: Int): SearchResponseList {
-        val document = app.get("$mainUrl/busquedas/$query?page=$page").documentLarge
-        val results = document.select(".col-xs-4").mapNotNull { it.toSearchResult() }
-        return results.toNewSearchResponseList()
-    }
+    // ===================== LOAD =====================
 
     override suspend fun load(url: String): LoadResponse {
-        val document = app.get(url).documentLarge
-        val title = document.selectFirst(".ls-title-serie")?.text()?.trim() ?: ""
-        val poster = document.selectFirst("head meta[property=og:image]")?.attr("content") ?: ""
-        val description = document.selectFirst("p.text-justify.fc-dark")?.text()?.trim()
-        val genres = document.select("span.label.label-primary.f-bold").map { it.text() }
-        val status = when (document.selectFirst("div.col-md-6.col-xs-6.align-center.bg-white.pt-10.pr-15.pb-0.pl-15 p span.badge")?.text()) {
-            "En Emisión" -> ShowStatus.Ongoing
-            "Finalizada" -> ShowStatus.Completed
-            else -> null
-        }
+        val doc = app.get(url).document
 
-        val episodes = document.select("ul.donghua-list a").mapNotNull { ep ->
-            val link = ep.attr("href")
-            val epNum = Regex("ver\\/.*\\/(\\d+)").find(link)?.groupValues?.get(1)?.toIntOrNull()
-            newEpisode(fixUrl(link)) {
-                this.episode = epNum
-                this.name = "Episodio $epNum"
+        val title = doc.selectFirst(".ls-title-serie")?.text() ?: ""
+        val poster = doc.selectFirst("meta[property=og:image]")?.attr("content")
+        val description = doc.selectFirst("p.text-justify.fc-dark")?.text()
+
+        val episodes = doc.select("ul.donghua-list a")
+            .mapNotNull {
+                val href = it.attr("href")
+                val ep = Regex("ver/.*/(\\d+)").find(href)?.groupValues?.get(1)
+                Episode(fixUrl(href), ep?.toIntOrNull())
             }
-        }
 
-        return newTvSeriesLoadResponse(title, url, TvType.Anime, episodes.sortedBy { it.episode }) {
-            this.posterUrl = poster
-            this.plot = description
-            this.tags = genres
-            this.showStatus = status
+        return newAnimeLoadResponse(title, url, TvType.Anime) {
+            posterUrl = poster
+            plot = description
+            addEpisodes(DubStatus.Subbed, episodes.sortedBy { it.episode })
         }
     }
 
-override suspend fun loadLinks(
-    data: String,
-    isCasting: Boolean,
-    subtitleCallback: (SubtitleFile) -> Unit,
-    callback: (ExtractorLink) -> Unit
-): Boolean {
-    val document = app.get(data).documentLarge
+    // ===================== LINKS =====================
 
-    val iframeUrl = document.selectFirst("#tamamo_player")?.attr("src")
-    if (!iframeUrl.isNullOrEmpty()) {
-        val iframeDoc = app.get(iframeUrl).documentLarge
+    override suspend fun loadLinks(
+        data: String,
+        isCasting: Boolean,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ): Boolean {
 
-        // Buscar ID de Dailymotion en los scripts
-        val scriptContent = iframeDoc.select("script").joinToString(" ") { it.html() }
-        val regex = Regex("""video:\s*"([^"]+)"""")
-        val id = regex.find(scriptContent)?.groupValues?.get(1)
+        val headers = mapOf(
+            "User-Agent" to USER_AGENT,
+            "Referer" to data,
+            "X-Requested-With" to "XMLHttpRequest"
+        )
 
-        if (id != null) {
-            val dmUrl = "https://www.dailymotion.com/video/$id"
-            loadExtractor(dmUrl, referer = data, subtitleCallback, callback)
-            return true
-        }
+        app.get(data).document.select("script").forEach { script ->
 
-        // Pasar cualquier iframe o enlace a loadExtractor
-        iframeDoc.select("iframe, a").mapNotNull { it.attr("src").ifEmpty { it.attr("href") } }
-            .forEach { playerUrl ->
-                loadExtractor(playerUrl, referer = data, subtitleCallback, callback)
+            if (!script.data().contains("eval(function(p,a,c,k,e")) return@forEach
+
+            val packed = Regex("""eval\(function\(p,a,c,k,e,.*?\)\)""")
+                .findAll(script.data())
+                .map { it.value }
+
+            packed.forEach { js ->
+
+                val unpacked = getAndUnpack(js)
+
+                // -------- FILEMOON / VOE / ASURA --------
+                fetchUrls(unpacked).forEach { url ->
+                    loadExtractor(url, data, subtitleCallback, callback)
+                }
+
+                // -------- DAILYMOTION (INTERMEDIO) --------
+                if (unpacked.contains("protea_tab")) {
+
+                    val slug = Regex("""protea_tab.*?slug.*?\"(.*?)\"""")
+                        .find(unpacked)
+                        ?.groupValues
+                        ?.get(1)
+                        ?: return@forEach
+
+                    val api = app.get(
+                        "$mainUrl/api_donghua.php?slug=$slug",
+                        headers = headers
+                    ).text
+
+                    val key = api
+                        .substringAfter("\"url\":\"")
+                        .substringBefore("\"")
+
+                    if (key.isEmpty()) return@forEach
+
+                    val playerUrl =
+                        "https://www.mdnemonicplayer.xyz/nemonicplayer/dmplayer.php?key=$key"
+
+                    val playerHtml = app.get(
+                        playerUrl,
+                        headers = mapOf("Referer" to mainUrl),
+                        allowRedirects = false
+                    ).text
+
+                    val videoId = Regex("""video.*?\"(.*?)\"""")
+                        .find(playerHtml)
+                        ?.groupValues
+                        ?.get(1)
+                        ?: return@forEach
+
+                    val embed =
+                        "https://www.dailymotion.com/embed/video/$videoId"
+
+                    loadExtractor(
+                        embed,
+                        mainUrl,
+                        subtitleCallback,
+                        callback
+                    )
+                }
+
+                // -------- ASURA DIRECT HLS --------
+                if (unpacked.contains("asura_player")) {
+                    val hls = Regex("""file.*?\"(https.*?\.m3u8)\"""")
+                        .find(unpacked)
+                        ?.groupValues
+                        ?.get(1)
+
+                    if (!hls.isNullOrEmpty()) {
+                        generateM3u8("Asura", hls, mainUrl)
+                            .forEach(callback)
+                    }
+                }
             }
+        }
 
         return true
     }
-
-    return false
-}
-
 }
