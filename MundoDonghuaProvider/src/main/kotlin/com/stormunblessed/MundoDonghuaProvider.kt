@@ -80,22 +80,38 @@ class MundoDonghuaProvider : MainAPI() {
         }
     }
 
-    override suspend fun loadLinks(
-        data: String,
-        isCasting: Boolean,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
-    ): Boolean {
-        val document = app.get(data).documentLarge
+      override suspend fun loadLinks(
+    data: String,
+    isCasting: Boolean,
+    subtitleCallback: (SubtitleFile) -> Unit,
+    callback: (ExtractorLink) -> Unit
+): Boolean {
+    val document = app.get(data).documentLarge
 
-        // Buscar iframes y enlaces de players soportados
-        document.select("iframe, a").mapNotNull { it.attr("src").ifEmpty { it.attr("href") } }
+    // Buscar iframe intermedio (ej. tamamo_player)
+    val iframeUrl = document.selectFirst("#tamamo_player")?.attr("src")
+    if (!iframeUrl.isNullOrEmpty()) {
+        val iframeDoc = app.get(iframeUrl).documentLarge
+
+        // Caso 1: DM.player (Dailymotion)
+        val scriptContent = iframeDoc.select("script").html()
+        val regex = Regex("""video:\s*"([^"]+)"""")
+        val id = regex.find(scriptContent)?.groupValues?.get(1)
+
+        if (id != null) {
+            val dmUrl = "https://www.dailymotion.com/video/$id"
+            loadExtractor(dmUrl, referer = data, subtitleCallback, callback)
+            return true
+        }
+
+        // Caso 2: otros hosts (OK.ru, Streamtape, Filemoon, etc.)
+        iframeDoc.select("iframe, a").mapNotNull { it.attr("src").ifEmpty { it.attr("href") } }
             .filter { url ->
-                url.contains("watchsb") ||
-                url.contains("dailymotion") ||
                 url.contains("ok.ru") ||
                 url.contains("streamtape") ||
-                url.contains("filemoon")
+                url.contains("filemoon") ||
+                url.contains("watchsb") ||
+                url.contains("dailymotion")
             }
             .forEach { playerUrl ->
                 loadExtractor(playerUrl, referer = data, subtitleCallback, callback)
@@ -103,4 +119,8 @@ class MundoDonghuaProvider : MainAPI() {
 
         return true
     }
+
+    return false
+}
+
 }

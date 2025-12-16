@@ -1,28 +1,28 @@
-plugins {
-    id("com.android.library")
-    kotlin("android")
-}
+// use an integer for version numbers
+version = 8
 
-android {
-    namespace = "com.mundodonghua"
-    compileSdk = 33
 
-    defaultConfig {
-        minSdk = 21
-        targetSdk = 33
-    }
+cloudstream {
+    // All of these properties are optional, you can safely remove them
 
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
-    }
+    description = "Anime and Movies"
+    language    = "es"
+    authors = listOf("LuisM")
 
-    kotlinOptions {
-        jvmTarget = "1.8"
-    }
-}
+    /**
+    * Status int as the following:
+    * 0: Down
+    * 1: Ok
+    * 2: Slow
+    * 3: Beta only
+    * */
+    status = 1 // will be 3 if unspecified
 
-dependencies {
-    // No pongas cloudstream3 aquí, ya lo provee el plugin raíz
-    implementation("org.jetbrains.kotlin:kotlin-stdlib:1.9.23")
+    // List of video source types. Users are able to filter for extensions in a given category.
+    // You can find a list of available types here:
+    // https://recloudstream.github.io/cloudstream/html/app/com.lagradost.cloudstream3/-tv-type/index.html
+    tvTypes = listOf("AnimeMovie","Anime","Cartoon")
+    iconUrl = "https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://animexin.top&size=%size%"
+
+    isCrossPlatform = true
 }
