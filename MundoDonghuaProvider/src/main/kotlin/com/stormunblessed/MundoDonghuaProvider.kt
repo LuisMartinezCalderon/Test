@@ -80,7 +80,7 @@ class MundoDonghuaProvider : MainAPI() {
         }
     }
 
-      override suspend fun loadLinks(
+override suspend fun loadLinks(
     data: String,
     isCasting: Boolean,
     subtitleCallback: (SubtitleFile) -> Unit,
@@ -88,13 +88,12 @@ class MundoDonghuaProvider : MainAPI() {
 ): Boolean {
     val document = app.get(data).documentLarge
 
-    // Buscar iframe intermedio (ej. tamamo_player)
     val iframeUrl = document.selectFirst("#tamamo_player")?.attr("src")
     if (!iframeUrl.isNullOrEmpty()) {
         val iframeDoc = app.get(iframeUrl).documentLarge
 
-        // Caso 1: DM.player (Dailymotion)
-        val scriptContent = iframeDoc.select("script").html()
+        // Buscar ID de Dailymotion en los scripts
+        val scriptContent = iframeDoc.select("script").joinToString(" ") { it.html() }
         val regex = Regex("""video:\s*"([^"]+)"""")
         val id = regex.find(scriptContent)?.groupValues?.get(1)
 
@@ -104,15 +103,8 @@ class MundoDonghuaProvider : MainAPI() {
             return true
         }
 
-        // Caso 2: otros hosts (OK.ru, Streamtape, Filemoon, etc.)
+        // Pasar cualquier iframe o enlace a loadExtractor
         iframeDoc.select("iframe, a").mapNotNull { it.attr("src").ifEmpty { it.attr("href") } }
-            .filter { url ->
-                url.contains("ok.ru") ||
-                url.contains("streamtape") ||
-                url.contains("filemoon") ||
-                url.contains("watchsb") ||
-                url.contains("dailymotion")
-            }
             .forEach { playerUrl ->
                 loadExtractor(playerUrl, referer = data, subtitleCallback, callback)
             }
