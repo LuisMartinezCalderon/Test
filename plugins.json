@@ -1,0 +1,52 @@
+[
+    {
+        "url": "https://raw.githubusercontent.com/LuisMartinezCalderon/Test/builds/DonghuaLifeProvider.cs3",
+        "status": 1,
+        "version": 2,
+        "name": "DonghuaLifeProvider",
+        "internalName": "DonghuaLifeProvider",
+        "authors": [
+            "LuisM"
+        ],
+        "description": "Anime and Movies",
+        "fileSize": 26826,
+        "repositoryUrl": "https://github.com/LuisMartinezCalderon/Test",
+        "language": "es-mx",
+        "tvTypes": [
+            "AnimeMovie",
+            "Anime",
+            "Cartoon"
+        ],
+        "iconUrl": "https://i.postimg.cc/ZRJSYk9Z/ico-Donhua-Life.png",
+        "apiVersion": 1,
+        "fileHash": "sha256-3a347fa171b2fec55a5d86b2702725de201ae521e9385baa6cc2de17d3227264",
+        "jarFileSize": 153522,
+        "jarUrl": "https://raw.githubusercontent.com/LuisMartinezCalderon/Test/builds/DonghuaLifeProvider.jar",
+        "jarHash": "sha256-c5dbf21512e98eaac1160804ce51f16c6e94c3fc237b525e7094b89bf8516bdc"
+    },
+    {
+        "url": "https://raw.githubusercontent.com/LuisMartinezCalderon/Test/builds/MundoDonghuaProvider.cs3",
+        "status": 1,
+        "version": 9,
+        "name": "MundoDonghuaProvider",
+        "internalName": "MundoDonghuaProvider",
+        "authors": [
+            "LuisM"
+        ],
+        "description": "Anime and Movies",
+        "fileSize": 28615,
+        "repositoryUrl": "https://github.com/LuisMartinezCalderon/Test",
+        "language": "es",
+        "tvTypes": [
+            "AnimeMovie",
+            "Anime",
+            "Cartoon"
+        ],
+        "iconUrl": "https://th.bing.com/th/id/ODF.Nvq9EjlTS5Yx4c6ObQ_ZzQ?w=32&h=32&qlt=90&pcl=fffffa&r=0&o=6&cb=ucfimg1&pid=1.2&ucfimg=1",
+        "apiVersion": 1,
+        "fileHash": "sha256-f396cd2770796b5097dc715091371099ae634d43047e29dfc9f480659ab0a088",
+        "jarFileSize": 139647,
+        "jarUrl": "https://raw.githubusercontent.com/LuisMartinezCalderon/Test/builds/MundoDonghuaProvider.jar",
+        "jarHash": "sha256-b53ec2e716d2e4ea0dfce5dc09ab052cce93de6d3ab21761a97dae974fd8a53d"
+    }
+]
