@@ -207,4 +207,10 @@ class MundoDonghuaProvider : MainAPI() {
 
         return candidates.map { this.attr(it) }.firstOrNull { it.isNotBlank() }
     }
+    fun fixUrlNull(url: String?): String? {
+    if (url.isNullOrBlank()) return null
+    return if (url.startsWith("/")) {
+        "$mainUrl:$url"   // aquí pones el dominio real
+    } else url
+}
 }
