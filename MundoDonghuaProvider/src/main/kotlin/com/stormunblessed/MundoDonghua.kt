@@ -60,6 +60,7 @@ class MundoDonghuaProvider : MainAPI() {
         return if (epsAnchor.size > 1) {
             val episodes: List<Episode>? = epsAnchor.map {
                 val epPoster = it.select("img")?.attr("src")?.trim()
+                               ?.let { fixUrlNull(it) }
                 val epHref   = it.attr("href")
 
                 newEpisode(epHref) {
