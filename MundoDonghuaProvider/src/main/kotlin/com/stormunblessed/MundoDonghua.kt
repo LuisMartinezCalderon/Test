@@ -59,10 +59,10 @@ class MundoDonghuaProvider : MainAPI() {
 
         val title = document.selectFirst("h1")?.text()?.trim() ?: return null
 
-        val posterUrl = document.selectFirst(".md-detail-poster img, img")
+        val posterUrl = document.selectFirst(".md-detail-poster img, img.img-fluid[src*='/thumbs/']")
             ?.attr("abs:src")
             ?: run {
-                val style = document.selectFirst("div[style*='background-image']")?.attr("style") ?: ""
+                val style = document.selectFirst(".md-detail-poster img, img.img-fluid[src*='/thumbs/']")
                 if (style.contains("background-image")) {
                     mainUrl + style.substringAfter("url(").substringBefore(")")
                 } else null
