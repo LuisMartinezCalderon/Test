@@ -53,13 +53,13 @@ class MundoDonghuaProvider : MainAPI() {
         val document    = app.get(url).document
         val title       = document.selectFirst("h1")?.text() ?: "Desconocido"
         val poster      = fixUrlNull(document.selectFirst(".md-detail-poster img")?.getImageAttr())
-        val description = document.selectFirst("md-detail-synopsis")?.text()
+        val description = document.selectFirst(".md-detail-synopsis")?.text()
         val tags        = document.select("a[href*='/genero/']").map { it.text() }
         val epsAnchor   = document.select("ul li a[href*='/ver/']")
 
         return if (epsAnchor.size > 1) {
             val episodes: List<Episode>? = epsAnchor.map {
-                val epPoster = it.select("img").attr("data-src")
+                val epPoster = poster
                 val epHref   = it.attr("href")
 
                 newEpisode(epHref) {
