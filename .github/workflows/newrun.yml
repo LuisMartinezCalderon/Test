@@ -1,7 +1,7 @@
 name: Build
   rm -rf ~/.gradle/caches
   rm -rf ~/.gradle/wrapper
-  run: rm -rf ~/.gradle/caches/modules-2/files-2.1/com.github.recloudstream
+  rm -rf ~/.gradle/caches/modules-2/files-2.1/com.github.recloudstream
 
 # https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#concurrency
 concurrency:
