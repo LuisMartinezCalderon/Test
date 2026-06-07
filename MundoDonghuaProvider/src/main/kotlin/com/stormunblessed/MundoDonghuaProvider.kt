@@ -104,7 +104,7 @@ class MundoDonghuaProvider : MainAPI() {
         val epNumRegex = Regex("ver\\/.*\\/(\\d+)")
         val newEpisodes = ArrayList<Episode>()
         doc.select("ul.donghua-list a").map {
-            //val name = it.selectFirst(".fs-16")?.text()
+            //val name = it.selectFirst(".fs-16")?.text() y
             val link = it.attr("href")
             val epnum = epNumRegex.find(link)?.destructured?.component1()
             newEpisodes.add(
