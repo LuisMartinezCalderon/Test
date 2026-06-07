@@ -74,7 +74,7 @@ class Latanime : MainAPI() {
     override suspend fun load(url: String): LoadResponse {
         val document    = app.get(url).document
         val title       = document.selectFirst("h2")?.text() ?: "Desconocido"
-        val poster      = document.selectFirst(".md-detail-poster img")?.attr("abs:src")
+        val poster      = document.selectFirst("meta[property=og:image]")?.attr("content")?.trim()
         val description = document.selectFirst("h2 ~ p.my-2")?.text()
         val tags        = document.select("a div.btn").map { it.text() }
         val year        = document.select(".span-tiempo").text().substringAfterLast(" de ").toIntOrNull()
