@@ -2,8 +2,6 @@ package com.stormunblessed
 
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
-import com.lagradost.cloudstream3.utils.AppUtils.toJson
-import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 import org.jsoup.nodes.Element
 
 class MundoDonghuaProvider : MainAPI() {
@@ -16,32 +14,41 @@ class MundoDonghuaProvider : MainAPI() {
 
     // ===== PÁGINA PRINCIPAL =====
     override val mainPage = mainPageOf(
-        "$mainUrl/lista-donghuas/" to "Populares",
-        "$mainUrl/lista-episodios/" to "Últimos Episodios",
+        "$mainUrl/lista-donghuas" to "Todas las Series",
+        "$mainUrl/lista-donghuas-emision" to "En Emisión",
+        "$mainUrl/lista-donghuas-finalizados" to "Finalizadas",
     )
 
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse {
-        val url = request.data + page
+        // La paginación es /lista-donghuas/2, /lista-donghuas/3, etc.
+        // Página 1 no lleva número
+        val url = if (page == 1) request.data else "${request.data}/$page"
         val document = app.get(url).document
-        val items = document.select("a[href*='/donghua/']").mapNotNull { element ->
-            animeFromElement(element)
-        }
+        val items = document.select("a[href*='/donghua/']").mapNotNull { animeFromElement(it) }
         return newHomePageResponse(request.name, items)
     }
 
+    // La lista NO tiene imágenes en el HTML — se construyen desde el slug de la URL
+    // Estructura real del poster: /thumbs/INICIAL/Nombre_Serie/imagen.jpg
+    // Lo más fiable es obtener la imagen desde el og:image de la página de detalle,
+    // pero para la lista usamos una imagen placeholder y la real se carga en load()
     private fun animeFromElement(element: Element): SearchResponse? {
         val href = element.attr("href").takeIf { it.isNotEmpty() } ?: return null
-        val rawText = element.text()
-        val title = rawText
-            .replace(Regex("(\\d{1,3}([,.]\\d{3})*|\\d+)$"), "")
-            .replace(" Donghua", "")
-            .replace(" Especial", "")
-            .replace(" OVA", "")
+        if (!href.contains("/donghua/")) return null
+
+        // El texto tiene formato "Titulo Donghua Titulo 123,456"
+        // Limpiamos el número de vistas y el badge de tipo
+        val fullText = element.text()
+        val title = fullText
+            .replace(Regex("\\s+(Donghua|Especial|OVA|Película)\\s+"), " ")
+            .replace(Regex("\\s+\\d[\\d,.]*$"), "")
             .trim()
             .takeIf { it.isNotEmpty() } ?: return null
-        val posterUrl = element.selectFirst("img")?.attr("abs:src")
-        return newAnimeSearchResponse(title, href, TvType.Anime) {
-            this.posterUrl = posterUrl
+
+        // Imagen: la lista no tiene img tags, usamos og:image del detalle
+        // Para mostrar algo en la lista usamos null — Cloudstream lo maneja con placeholder
+        return newAnimeSearchResponse(title, fixUrl(href), TvType.Anime) {
+            this.posterUrl = null
         }
     }
 
@@ -52,43 +59,46 @@ class MundoDonghuaProvider : MainAPI() {
     }
 
     // ===== DETALLES =====
+    // Estructura real del HTML:
+    // <img src="/thumbs/A/Against_the_Gods/bg_xxx.jpg">          ← background, sin alt
+    // <img src="/thumbs/A/Against_the_Gods/xxx.jpg" alt="Titulo"> ← POSTER ✓
     override suspend fun load(url: String): LoadResponse? {
         val document = app.get(url).document
 
         val title = document.selectFirst("h1")?.text()?.trim() ?: return null
 
-        val posterUrl = document.selectFirst(".md-detail-poster img, img.img-fluid[src*='/thumbs/']")
+        // El poster es el img con alt igual al título (segundo img de la página)
+        // El background es el primer img sin atributo alt
+        val posterUrl = document.select("img[alt]")
+            .firstOrNull { it.attr("alt").isNotEmpty() && !it.attr("src").contains("logo") }
             ?.attr("abs:src")
-            ?: run {
-                val style = document.selectFirst("div[style*='background-image']")?.attr("style") ?: ""
-                if (style.contains("background-image")) {
-                    mainUrl + style.substringAfter("url(").substringBefore(")")
-                } else null
-            }
+            // Fallback: og:image del meta
+            ?: document.selectFirst("meta[property=og:image]")?.attr("content")
 
-        val description = document.selectFirst(".md-detail-synopsis")
-            ?.text()?.removeSurrounding("\"")
+        val description = document.selectFirst("p, .sinopsis, section")
+            ?.text()
+            ?.takeIf { it.length > 30 }
 
         val genres = document.select("a[href*='/genero/']").map { it.text() }
 
-        val statusText = document.selectFirst(".md-emision-badge")?.text() ?: ""
+        val statusText = document.select("p, span, div").map { it.text() }
+            .firstOrNull { it.contains("Finalizada") || it.contains("En Emisión") } ?: ""
         val showStatus = when {
             statusText.contains("En Emisión") -> ShowStatus.Ongoing
             statusText.contains("Finalizada") -> ShowStatus.Completed
             else -> null
         }
 
-        // Episodios — usando newEpisode en lugar del constructor deprecated
-        val episodes = document.select("ul li a[href*='/ver/']").mapNotNull { el ->
+        // Episodios — estructura: <li><a href="/ver/slug/numero">Titulo - numero</a></li>
+        val episodes = document.select("li a[href*='/ver/']").mapNotNull { el ->
             val epUrl = el.attr("href").takeIf { it.isNotEmpty() } ?: return@mapNotNull null
-            val epNum = epUrl.split("/").last().toFloatOrNull() ?: 0f
-            val nameEpsd = el.selectFirst(".md-episode-details h5")?.text()?.trim()
-            val epName = if (!nameEpsd.isNullOrEmpty()) nameEpsd else "Episodio ${epNum.toInt()}"
+            val epNum = epUrl.split("/").last().toIntOrNull() ?: return@mapNotNull null
+            val epName = el.text().trim().takeIf { it.isNotEmpty() } ?: "Episodio $epNum"
             newEpisode(fixUrl(epUrl)) {
                 name = epName
-                episode = epNum.toInt()
+                episode = epNum
             }
-        }
+        }.reversed() // El sitio lista del más nuevo al más viejo — invertimos
 
         return newAnimeLoadResponse(title, url, TvType.Anime) {
             this.posterUrl = posterUrl
@@ -103,8 +113,9 @@ class MundoDonghuaProvider : MainAPI() {
 
     private fun fetchUrls(text: String?): List<String> {
         if (text.isNullOrEmpty()) return emptyList()
-        val linkRegex =
-            Regex("(http|ftp|https):\\/\\/([\\w_-]+(?:(?:\\.[\\w_-]+)+))([\\w.,@?^=%&:\\/~+#-]*[\\w@?^=%&\\/~+#-])")
+        val linkRegex = Regex(
+            "(https?|ftp):\\/\\/([\\w_-]+(?:\\.[\\w_-]+)+)([\\w.,@?^=%&:\\/~+#-]*[\\w@?^=%&\\/~+#-])"
+        )
         return linkRegex.findAll(text).map { it.value.trim().removeSurrounding("\"") }.toList()
     }
 
@@ -120,40 +131,37 @@ class MundoDonghuaProvider : MainAPI() {
             val scriptData = script.data()
             if (!scriptData.contains("eval(function(p,a,c,k,e")) return@forEach
 
-            val packedRegex = Regex("eval\\(function\\(p,a,c,k,e,.*?\\)\\)", RegexOption.DOT_MATCHES_ALL)
+            val packedRegex = Regex(
+                "eval\\(function\\(p,a,c,k,e,.*?\\)\\)",
+                RegexOption.DOT_MATCHES_ALL
+            )
             packedRegex.findAll(scriptData).forEach { match ->
                 val packed = match.value
 
-                // --- VOE (amagi_tab) ---
+                // --- VOE ---
                 if (packed.contains("amagi_tab") || packed.contains("amagi")) {
                     fetchUrls(packed).forEach { url ->
                         if (url.contains("voe.sx") || url.contains("voe-unblock")) {
-                            runCatching {
-                                loadExtractor(url, data, subtitleCallback, callback)
-                            }
+                            runCatching { loadExtractor(url, data, subtitleCallback, callback) }
                         }
                     }
                 }
 
-                // --- Filemoon (fmoon_tab) ---
+                // --- Filemoon ---
                 if (packed.contains("fmoon_tab") || packed.contains("fmoon")) {
                     val fmoonRegex = Regex(
                         """https?://(?:filemoon\.sx|moonembed\.pw|filemoon\.to|fmoonembed\.com|embedwish\.com|vgembed\.com|bysekoze\.com)[^\s"']+"""
                     )
                     val fallbackRegex = Regex("""'(https?://[^']+?)'""")
-                    val urls = (
-                        fmoonRegex.findAll(packed).map { it.value } +
-                        fallbackRegex.findAll(packed).map { it.groupValues[1] }
-                    ).distinct().toList()
-
-                    urls.forEach { url ->
-                        runCatching {
-                            loadExtractor(url, data, subtitleCallback, callback)
+                    (fmoonRegex.findAll(packed).map { it.value } +
+                     fallbackRegex.findAll(packed).map { it.groupValues[1] })
+                        .distinct()
+                        .forEach { url ->
+                            runCatching { loadExtractor(url, data, subtitleCallback, callback) }
                         }
-                    }
                 }
 
-                // --- Tamamo / Dailymotion (tamamo_tab) ---
+                // --- Dailymotion (tamamo_tab) ---
                 if (packed.contains("tamamo_tab") || packed.contains("tamamo")) {
                     runCatching {
                         val slug = packed.substringAfter("\"slug\":\"").substringBefore("\"")
@@ -174,9 +182,7 @@ class MundoDonghuaProvider : MainAPI() {
                                 if (videoId.isNotEmpty()) {
                                     loadExtractor(
                                         "https://www.dailymotion.com/embed/video/$videoId",
-                                        data,
-                                        subtitleCallback,
-                                        callback,
+                                        data, subtitleCallback, callback,
                                     )
                                 }
                             }
@@ -184,18 +190,20 @@ class MundoDonghuaProvider : MainAPI() {
                     }
                 }
 
-                // --- Asura / HLS directo (asura_tab) ---
+                // --- Asura / HLS directo ---
                 if (packed.contains("asura_tab") || packed.contains("asura")) {
                     fetchUrls(packed).forEach { url ->
                         if (url.contains("redirector") || url.contains("mdnemonicplayer")) {
                             runCatching {
-                                // Usando newExtractorLink en lugar del constructor deprecated
                                 callback.invoke(
                                     newExtractorLink(
                                         source = "Asura",
                                         name = "Asura",
                                         url = url,
-                                        type = if (url.contains(".m3u8")) ExtractorLinkType.M3U8 else ExtractorLinkType.VIDEO,
+                                        type = if (url.contains(".m3u8"))
+                                            ExtractorLinkType.M3U8
+                                        else
+                                            ExtractorLinkType.VIDEO,
                                     ) {
                                         this.referer = "$mainUrl/"
                                         this.quality = Qualities.Unknown.value
