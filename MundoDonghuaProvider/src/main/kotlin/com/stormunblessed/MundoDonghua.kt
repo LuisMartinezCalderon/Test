@@ -11,6 +11,7 @@ class MundoDonghuaProvider : MainAPI() {
     override var name = "MundoDonghua"
     override var lang = "es-mx"
     override val hasMainPage = true
+    override val hasDownloadSupport   = true
     override val hasQuickSearch       = true
     override val supportedTypes = setOf(TvType.Anime, TvType.AnimeMovie, TvType.OVA)
 
