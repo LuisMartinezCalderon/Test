@@ -3,6 +3,7 @@ package com.stormunblessed
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.TvType
 import com.lagradost.cloudstream3.utils.*
+import com.lagradost.cloudstream3.utils.M3u8Helper.Companion.generateM3u8
 import org.jsoup.nodes.Element
 
 class MundoDonghuaProvider : MainAPI() {
@@ -34,8 +35,8 @@ class MundoDonghuaProvider : MainAPI() {
     }
 
     private fun Element.animeFromElement(): SearchResponse {
-        val href = this.attr("href")
         val title = this.select("h1").text()
+        val href = this.attr("href")
         val posterUrl = fixUrlNull(this.selectFirst("img")?.getImageAttr())
         val isDub     = title.contains("Latino") || title.contains("Castellano")
         return newAnimeSearchResponse(title, href, TvType.Anime) {
@@ -100,109 +101,61 @@ class MundoDonghuaProvider : MainAPI() {
             isCasting: Boolean,
             subtitleCallback: (SubtitleFile) -> Unit,
             callback: (ExtractorLink) -> Unit,
-    ): Boolean {
-        val document = app.get(data).document
-
-        document.select("script").forEach { script ->
-            val scriptData = script.data()
-            if (!scriptData.contains("eval(function(p,a,c,k,e")) return@forEach
-
-            val packedRegex =
-                    Regex("eval\\(function\\(p,a,c,k,e,.*?\\)\\)", RegexOption.DOT_MATCHES_ALL)
-            packedRegex.findAll(scriptData).forEach { match ->
-                val packed = match.value
-
-                // --- VOE (amagi_tab) ---
-                if (packed.contains("amagi_tab") || packed.contains("amagi")) {
-                    fetchUrls(packed).forEach { url ->
-                        if (url.contains("voe.sx") || url.contains("voe-unblock")) {
-                            runCatching { loadExtractor(url, data, subtitleCallback, callback) }
-                        }
+    ): Boolean{
+        val datafix = data.replace("ñ","%C3%B1")
+        val reqHEAD = mapOf(
+            "User-Agent" to USER_AGENT,
+            "Accept" to "*/*",
+            "Accept-Language" to "en-US,en;q=0.5",
+            "X-Requested-With" to "XMLHttpRequest",
+            "Referer" to datafix,
+            "DNT" to "1",
+            "Connection" to "keep-alive",
+            "Sec-Fetch-Dest" to "empty",
+            "Sec-Fetch-Mode" to "cors",
+            "Sec-Fetch-Site" to "same-origin",
+            "TE" to "trailers"
+        )
+        app.get(data).document.select("script").amap { script ->
+            if (script.data().contains("eval(function(p,a,c,k,e")) {
+                val packedRegex = Regex("eval\\(function\\(p,a,c,k,e,.*\\)\\)")
+                packedRegex.findAll(script.data()).map {
+                    it.value
+                }.toList().amap {
+                    val unpack = getAndUnpack(it).replace("diasfem","embedsito")
+                    fetchUrls(unpack).amap { url ->
+                        val newUrl = url.replace("https://sbbrisk.com","https://watchsb.com")
+                        loadExtractor(newUrl, data, subtitleCallback, callback)
                     }
-                }
-
-                // --- Filemoon (fmoon_tab) ---
-                if (packed.contains("fmoon_tab") || packed.contains("fmoon")) {
-                    val fmoonRegex =
-                            Regex(
-                                    """https?://(?:filemoon\.sx|moonembed\.pw|filemoon\.to|fmoonembed\.com|embedwish\.com|vgembed\.com|bysekoze\.com)[^\s"']+"""
-                            )
-                    val fallbackRegex = Regex("""'(https?://[^']+?)'""")
-                    val urls =
-                            (fmoonRegex.findAll(packed).map { it.value } +
-                                            fallbackRegex.findAll(packed).map { it.groupValues[1] })
-                                    .distinct()
-                                    .toList()
-
-                    urls.forEach { url ->
-                        runCatching { loadExtractor(url, data, subtitleCallback, callback) }
-                    }
-                }
-
-                // --- Tamamo / Dailymotion (tamamo_tab) ---
-                if (packed.contains("tamamo_tab") || packed.contains("tamamo")) {
-                    runCatching {
-                        val slug = packed.substringAfter("\"slug\":\"").substringBefore("\"")
-                        if (slug.isNotEmpty()) {
-                            val apiResponse =
-                                    app.get(
-                                                    "$mainUrl/api_donghua.php?slug=$slug",
-                                                    referer = data,
-                                            )
-                                            .text
-                            val slugPlayer =
-                                    apiResponse.substringAfter("\"url\":\"").substringBefore("\"")
-                            if (slugPlayer.isNotEmpty()) {
-                                val playerPage =
-                                        app.get(
-                                                        "https://www.mdplayer.xyz/nemonicplayer/dmplayer.php?key=$slugPlayer",
-                                                        referer = "$mainUrl/",
-                                                )
-                                                .text
-                                val videoId =
-                                        playerPage
-                                                .substringAfter("video-id=\"")
-                                                .substringBefore("\"")
-                                if (videoId.isNotEmpty()) {
-                                    loadExtractor(
-                                            "https://www.dailymotion.com/embed/video/$videoId",
-                                            data,
-                                            subtitleCallback,
-                                            callback,
-                                    )
-                                }
+                    if (unpack.contains("protea_tab")) {
+                        val protearegex = Regex("protea_tab.*slug.*\\\"(.*)\\\".*,type")
+                        val ssee = protearegex.find(unpack)?.destructured?.component1()
+                        if (!ssee.isNullOrEmpty()) {
+                            val aa = app.get("$mainUrl/api_donghua.php?slug=$ssee", headers = reqHEAD).text
+                            val secondK = aa.substringAfter("url\":\"").substringBefore("\"}")
+                            val se = "https://www.mdnemonicplayer.xyz/nemonicplayer/dmplayer.php?key=$secondK"
+                            val aa3 = app.get(se, headers = reqHEAD, allowRedirects = false).text
+                            val idReg = Regex("video.*\\\"(.*?)\\\"")
+                            val vidID = idReg.find(aa3)?.destructured?.component1()
+                            if (!vidID.isNullOrEmpty()) {
+                                val newLink = "https://www.dailymotion.com/embed/video/$vidID"
+                                loadExtractor(newLink, subtitleCallback, callback)
                             }
                         }
                     }
-                }
-
-                // --- Asura / HLS directo (asura_tab) ---
-                if (packed.contains("asura_tab") || packed.contains("asura")) {
-                    fetchUrls(packed).forEach { url ->
-                        if (url.contains("redirector") || url.contains("mdnemonicplayer")) {
-                            runCatching {
-                                // Usando newExtractorLink en lugar del constructor deprecated
-                                callback.invoke(
-                                        newExtractorLink(
-                                                source = "Asura",
-                                                name = "Asura",
-                                                url = url,
-                                                type =
-                                                        if (url.contains(".m3u8"))
-                                                                ExtractorLinkType.M3U8
-                                                        else ExtractorLinkType.VIDEO,
-                                        ) {
-                                            this.referer = "$mainUrl/"
-                                            this.quality = Qualities.Unknown.value
-                                        }
-                                )
+                    if (unpack.contains("asura_player")) {
+                        val asuraRegex = Regex("file.*\\\"(.*)\\\".*type")
+                        val aass = asuraRegex.find(unpack)?.destructured?.component1()
+                        if (!aass.isNullOrEmpty()) {
+                            val test = app.get(aass).text
+                            if (test.contains(Regex("#EXTM3U"))) {
+                                generateM3u8("Asura", aass, "").forEach(callback)
                             }
                         }
                     }
                 }
             }
         }
-
         return true
     }
     private fun Element.getImageAttr(): String? {
