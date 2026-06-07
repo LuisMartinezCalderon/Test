@@ -51,3 +51,7 @@ override suspend fun load(url: String): LoadResponse? {
             addEpisodes(DubStatus.Subbed, episodes)
         }
     }
+
+
+    poster  = fixUrlNull(document.selectFirst(".md-detail-poster img")?.getImageAttr())
+    ./gradlew build
