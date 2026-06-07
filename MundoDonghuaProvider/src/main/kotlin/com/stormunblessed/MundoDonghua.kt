@@ -62,7 +62,7 @@ class MundoDonghuaProvider : MainAPI() {
         val posterUrl = document.selectFirst(".md-detail-poster img, img.img-fluid[src*='/thumbs/']")
             ?.attr("abs:src")
             ?: run {
-                val style = document.selectFirst(".md-detail-poster img, img.img-fluid[src*='/thumbs/']")
+                val style = document.selectFirst("div[style*='background-image']")?.attr("style") ?: ""
                 if (style.contains("background-image")) {
                     mainUrl + style.substringAfter("url(").substringBefore(")")
                 } else null
