@@ -52,7 +52,7 @@ class MundoDonghuaProvider : MainAPI() {
     override suspend fun load(url: String): LoadResponse {
         val document    = app.get(url).document
         val title       = document.selectFirst("h1")?.text() ?: "Desconocido"
-        val poster      = document.selectFirst("md-detail-poster meta[property=og:image]")?.attr("content")?.trim()
+        val poster      = document.selectFirst(".md-detail-poster img, img.img-fluid[src*='/thumbs/']")?.attr("abs:src")
         val description = document.selectFirst("md-detail-synopsis")?.text()
         val tags        = document.select("a[href*='/genero/']").map { it.text() }
         val epsAnchor   = document.select("ul li a[href*='/ver/']")
