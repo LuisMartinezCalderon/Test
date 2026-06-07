@@ -10,10 +10,10 @@ import com.lagradost.cloudstream3.TvType
 
 class MundoDonghuaProvider : MainAPI() {
 
-    override var name = "MundoDonghua"
-    override var mainUrl = "https://www.mundodonghua.com"
-    override var lang = "es"
-    override val hasMainPage = true
+    override var mainUrl        = "https://www.mundodonghua.com"
+    override var name           = "MundoDonghua"
+    override var lang           = "es-mx"
+    override val hasMainPage    = true
     override val supportedTypes = setOf(TvType.Anime, TvType.AnimeMovie, TvType.OVA)
 
     // ===== PÁGINA PRINCIPAL =====
@@ -28,7 +28,14 @@ class MundoDonghuaProvider : MainAPI() {
         val items = document.select("a[href*='/donghua/']").mapNotNull { element ->
             animeFromElement(element)
         }
-        return newHomePageResponse(request.name, items)
+        return newHomePageResponse(
+            list    = HomePageList(
+                name               = request.name,
+                list               = items,
+                isHorizontalImages = false
+            ),
+            hasNext = true
+        )
     }
 
     private fun animeFromElement(element: Element): SearchResponse? {
@@ -59,8 +66,8 @@ class MundoDonghuaProvider : MainAPI() {
 
         val title = document.selectFirst("h1")?.text()?.trim() ?: return null
 
-        val posterUrl = document.selectFirst(".md-detail-poster img, img.img-fluid[src*='/thumbs/']")
-            ?.attr("abs:src")
+        val posterUrl =  document.selectFirst(".md-detail-poster img, img.img-fluid[src*='/thumbs/']")
+                    ?.attr("abs:src")
             ?: run {
                 val style = document.selectFirst("div[style*='background-image']")?.attr("style") ?: ""
                 if (style.contains("background-image")) {
