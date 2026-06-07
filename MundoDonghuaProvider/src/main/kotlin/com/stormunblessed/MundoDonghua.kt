@@ -24,6 +24,7 @@ class MundoDonghuaProvider : MainAPI() {
         val url = request.data + page
         val document = app.get(url).document
         val home = document.select("a[href*='/donghua/']").mapNotNull { it.animeFromElement() }
+
         return newHomePageResponse(
                 list = HomePageList(name = request.name, list = home, isHorizontalImages = false),
                 hasNext = true
@@ -34,7 +35,11 @@ class MundoDonghuaProvider : MainAPI() {
         val href = this.attr("href")
         val title = this.select("h1").text()
         val posterUrl = fixUrlNull(this.selectFirst("img")?.getImageAttr())
-        return newAnimeSearchResponse(title, href, TvType.Anime) { this.posterUrl = posterUrl }
+        val isDub     = title.contains("Latino") || title.contains("Castellano")
+        return newAnimeSearchResponse(title, href, TvType.Anime) {
+             this.posterUrl = posterUrl
+            addDubStatus(isDub)
+        }
     }
 
     // ===== BÚSQUEDA =====
