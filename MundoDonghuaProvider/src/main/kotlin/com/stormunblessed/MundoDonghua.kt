@@ -49,60 +49,37 @@ class MundoDonghuaProvider : MainAPI() {
     }
 
     // ===== DETALLES =====
-    override suspend fun load(url: String): LoadResponse? {
-        val document = app.get(url).document
+    override suspend fun load(url: String): LoadResponse {
+        val document    = app.get(url).document
+        val title       = document.selectFirst("h1")?.text() ?: "Desconocido"
+        val poster      = document.selectFirst("md-detail-poster meta[property=og:image]")?.attr("content")?.trim()
+        val description = document.selectFirst("md-detail-synopsis")?.text()
+        val tags        = document.select("a[href*='/genero/']").map { it.text() }
+        val epsAnchor   = document.select("ul li a[href*='/ver/']")
 
-        val title = document.selectFirst("h1")?.text()?.trim() ?: return null
+        return if (epsAnchor.size > 1) {
+            val episodes: List<Episode>? = epsAnchor.map {
+                val epPoster = it.select("img").attr("data-src")
+                val epHref   = it.attr("href")
 
-        val posterUrl =
-                document.selectFirst(".md-detail-poster img, img.img-fluid[src*='/thumbs/']")
-                        ?.attr("abs:src")
-                        ?: run {
-                            val style =
-                                    document.selectFirst("div[style*='background-image']")
-                                            ?.attr("style")
-                                            ?: ""
-                            if (style.contains("background-image")) {
-                                mainUrl + style.substringAfter("url(").substringBefore(")")
-                            } else null
-                        }
-
-        val description =
-                document.selectFirst(".md-detail-synopsis")?.text()?.removeSurrounding("\"")
-
-        val genres = document.select("a[href*='/genero/']").map { it.text() }
-
-        val statusText = document.selectFirst(".md-emision-badge")?.text() ?: ""
-        val showStatus =
-                when {
-                    statusText.contains("En Emisión") -> ShowStatus.Ongoing
-                    statusText.contains("Finalizada") -> ShowStatus.Completed
-                    else -> null
+                newEpisode(epHref) {
+                    this.posterUrl = epPoster
                 }
+            }
 
-        // Episodios — usando newEpisode en lugar del constructor deprecated
-        val episodes =
-                document.select("ul li a[href*='/ver/']").mapNotNull { el ->
-                    val epUrl = el.attr("href").takeIf { it.isNotEmpty() } ?: return@mapNotNull null
-                    val epNum = epUrl.split("/").last().toFloatOrNull() ?: 0f
-                    val nameEpsd = el.selectFirst(".md-episode-details h5")?.text()?.trim()
-                    val epName =
-                            if (!nameEpsd.isNullOrEmpty()) nameEpsd else "Episodio ${epNum.toInt()}"
-                    newEpisode(fixUrl(epUrl)) {
-                        name = epName
-                        episode = epNum.toInt()
-                    }
-                }
+            newAnimeLoadResponse(title, url, TvType.Anime) {
+                addEpisodes(DubStatus.Subbed, episodes)
+                this.posterUrl = poster
+                this.plot = description
+                this.tags = tags
 
-        return newAnimeLoadResponse(title, url, TvType.Anime) {
-            this.posterUrl = posterUrl
+            }
+        } else newMovieLoadResponse(title, url, TvType.AnimeMovie, epsAnchor.attr("href")) {
+            this.posterUrl = poster
             this.plot = description
-            this.tags = genres
-            this.showStatus = showStatus
-            addEpisodes(DubStatus.Subbed, episodes)
+            this.tags = tags
         }
     }
-
     // ===== EXTRACCIÓN DE VIDEOS =====
 
     private fun fetchUrls(text: String?): List<String> {
