@@ -23,41 +23,32 @@ class MundoDonghuaProvider : MainAPI() {
     )
 
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse {
-        val url = request.data + page
-        val document = app.get(url).document
-        val items = document.select("a[href*='/donghua/']").mapNotNull { element ->
-            animeFromElement(element)
-        }
+       val document = app.get("$mainUrl/${request.data}&p=$page").document
+        val home = document.select("a[href*='/donghua/']").mapNotNull { it.animeFromElement() }
         return newHomePageResponse(
             list    = HomePageList(
                 name               = request.name,
-                list               = items,
+                list               = home,
                 isHorizontalImages = false
             ),
             hasNext = true
         )
     }
 
-    private fun animeFromElement(element: Element): SearchResponse? {
-        val href = element.attr("href").takeIf { it.isNotEmpty() } ?: return null
-        val rawText = element.text()
-        val title = rawText
-            .replace(Regex("(\\d{1,3}([,.]\\d{3})*|\\d+)$"), "")
-            .replace(" Donghua", "")
-            .replace(" Especial", "")
-            .replace(" OVA", "")
-            .trim()
-            .takeIf { it.isNotEmpty() } ?: return null
-        val posterUrl = element.selectFirst("img")?.attr("abs:src")
+    private fun Element.animeFromElement():SearchResponse {
+        val href      = this.attr("href")
+        val title   = this.select("h1").text()
+        val posterUrl = fixUrlNull(this.selectFirst("img")?.getImageAttr())
         return newAnimeSearchResponse(title, href, TvType.Anime) {
             this.posterUrl = posterUrl
+            
         }
     }
 
     // ===== BÚSQUEDA =====
     override suspend fun search(query: String): List<SearchResponse> {
         val document = app.get("$mainUrl/busquedas/$query").document
-        return document.select("a[href*='/donghua/']").mapNotNull { animeFromElement(it) }
+        return document.select("a[href*='/donghua/']").mapNotNull { it.animeFromElement() }
     }
 
     // ===== DETALLES =====
@@ -218,5 +209,10 @@ class MundoDonghuaProvider : MainAPI() {
         }
 
         return true
+    }
+    private fun Element.getImageAttr(): String? {
+        return this.attr("data-src")
+            .takeIf { it.isNotBlank() && it.startsWith("http") }
+            ?: this.attr("src").takeIf { it.isNotBlank() && it.startsWith("http") }
     }
 }
