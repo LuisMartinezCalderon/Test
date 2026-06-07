@@ -8,12 +8,30 @@ buildscript {
     repositories {
         google()
         mavenCentral()
-        maven("https://jitpack.io")
+        maven {
+            url = uri("https://jitpack.io")
+            content {
+                includeGroup("com.github.recloudstream")
+            }
+        }
+    }
+
+    configurations.all {
+        resolutionStrategy.eachDependency {
+            if (requested.group == "com.github.recloudstream" && requested.name == "gradle") {
+                useVersion("master-SNAPSHOT")
+                because("JitPack SNAPSHOT")
+            }
+        }
+        resolutionStrategy.cacheChangingModulesFor(0, java.util.concurrent.TimeUnit.SECONDS)
+        resolutionStrategy.cacheDynamicVersionsFor(0, java.util.concurrent.TimeUnit.SECONDS)
     }
 
     dependencies {
-        classpath("com.android.tools.build:gradle:8.13.0")
-        classpath("com.github.recloudstream:gradle:master-SNAPSHOT")
+        classpath("com.android.tools.build:gradle:8.7.3")
+        classpath("com.github.recloudstream:gradle:master-SNAPSHOT") {
+            isChanging = true
+        }
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:2.3.0")
     }
 }
