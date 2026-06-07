@@ -26,9 +26,11 @@ allprojects {
     }
 }
 
-fun Project.cloudstream(configuration: CloudstreamExtension.() -> Unit) = extensions.getByName<CloudstreamExtension>("cloudstream").configuration()
+fun Project.cloudstream(configuration: CloudstreamExtension.() -> Unit) =
+        extensions.getByName<CloudstreamExtension>("cloudstream").configuration()
 
-fun Project.android(configuration: BaseExtension.() -> Unit) = extensions.getByName<BaseExtension>("android").configuration()
+fun Project.android(configuration: BaseExtension.() -> Unit) =
+        extensions.getByName<BaseExtension>("android").configuration()
 
 subprojects {
     apply(plugin = "com.android.library")
@@ -36,7 +38,10 @@ subprojects {
     apply(plugin = "com.lagradost.cloudstream3.gradle")
 
     cloudstream {
-        setRepo(System.getenv("GITHUB_REPOSITORY") ?: "https://github.com/phisher98/cloudstream-extensions-phisher")
+        setRepo(
+                System.getenv("GITHUB_REPOSITORY")
+                        ?: "https://github.com/phisher98/cloudstream-extensions-phisher"
+        )
         authors = listOf("Phisher98")
     }
 
@@ -47,7 +52,6 @@ subprojects {
             minSdk = 21
             compileSdkVersion(35)
             targetSdk = 35
-
         }
 
         compileOptions {
@@ -55,14 +59,13 @@ subprojects {
             targetCompatibility = JavaVersion.VERSION_1_8
         }
 
-
         tasks.withType<KotlinJvmCompile> {
             compilerOptions {
                 jvmTarget.set(JvmTarget.JVM_1_8)
                 freeCompilerArgs.addAll(
-                    "-Xno-call-assertions",
-                    "-Xno-param-assertions",
-                    "-Xno-receiver-assertions"
+                        "-Xno-call-assertions",
+                        "-Xno-param-assertions",
+                        "-Xno-receiver-assertions"
                 )
             }
         }
@@ -90,6 +93,4 @@ subprojects {
     }
 }
 
-tasks.register<Delete>("clean") {
-    delete(rootProject.layout.buildDirectory)
-}
+tasks.register<Delete>("clean") { delete(rootProject.layout.buildDirectory) }
