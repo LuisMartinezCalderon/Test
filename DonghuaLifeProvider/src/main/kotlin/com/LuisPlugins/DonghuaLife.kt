@@ -54,12 +54,12 @@ class DonghuaLifeProvider : MainAPI() {
     // ===== DETALLES =====
     override suspend fun load(url: String): LoadResponse {
         val document    = app.get(url).document
-        val title       = document.selectFirst("h1")?.text() ?: "Desconocido"
-        val poster      = document.select(".md-detail-banner-bg img")?.attr("src")?.trim()
+        val title       = document.selectFirst("h2")?.text() ?: "Desconocido"
+        val poster      = document.select(".image-style-poster")?.attr("src")?.trim()
                                ?.let { fixUrlNull(it) }
-        val description = document.selectFirst(".md-detail-synopsis")?.text()
-        val tags        = document.select("a[href*='/genero/']").map { it.text() }
-        val epsAnchor   = document.select("ul li a[href*='/ver/']")
+        val description = document.selectFirst(".card-body p")?.text()
+        val tags        = document.select("a[href*='/donghuas/']").map { it.text() }
+        val epsAnchor   = document.select("ul li a[href*='/season/']")
 
         return if (epsAnchor.size > 1) {
             val episodes: List<Episode>? = epsAnchor.map {
