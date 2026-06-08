@@ -134,8 +134,8 @@ override suspend fun loadLinks(
                 ?: Regex("""src="(https?://[^"]+)"""").find(unpacked)?.groupValues?.get(1)
 
             if (!iframeSrc.isNullOrEmpty()) {
-                val fixed = iframeSrc.replace("https://sbbrisk.com", "https://watchsb.com")
-                loadExtractor(fixed, datafix, subtitleCallback, callback)
+              //  val fixed = iframeSrc.replace("https://sbbrisk.com", "https://watchsb.com")
+                loadExtractor(iframeSrc, datafix, subtitleCallback, callback)
                 return@amap
             }
 
