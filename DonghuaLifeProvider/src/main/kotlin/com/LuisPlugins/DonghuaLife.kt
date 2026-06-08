@@ -35,7 +35,7 @@ class DonghuaLifeProvider : MainAPI() {
     }
 
     private fun Element.animeFromElement(): SearchResponse {
-        val title = this.select(".titulo").text()
+        val title = this.select(".titulo").text().trim()
         val href = this.attr("href")
         val posterUrl = fixUrlNull(this.selectFirst("img")?.getImageAttr())
         val isDub     = title.contains("Latino") || title.contains("Castellano")
@@ -54,7 +54,7 @@ class DonghuaLifeProvider : MainAPI() {
     // ===== DETALLES =====
     override suspend fun load(url: String): LoadResponse {
         val document    = app.get(url).document
-        val title       = document.selectFirst("h2")?.text() ?: "Desconocido"
+        val title       = document.selectFirst("h2 span")?.text() ?: "Desconocido"
         val poster      = document.select(".imagen-node img")?.attr("src")?.trim()
                                ?.let { fixUrlNull(it) }
         val description = document.selectFirst(".card-body p")?.text()
@@ -307,7 +307,7 @@ private fun unpackPACKED(packed: String): String {
     fun fixUrlNull(url: String?): String? {
     if (url.isNullOrBlank()) return null
     return if (url.startsWith("/")) {
-        "$mainUrl:$url" 
+        "$mainUrl$url" 
     } else url
 }
 }
