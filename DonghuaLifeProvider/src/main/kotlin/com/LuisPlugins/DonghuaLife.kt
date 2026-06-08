@@ -55,7 +55,7 @@ class DonghuaLifeProvider : MainAPI() {
     override suspend fun load(url: String): LoadResponse {
         val document    = app.get(url).document
         val title       = document.selectFirst("h2")?.text() ?: "Desconocido"
-        val poster      = document.select(".image-style-poster")?.attr("src")?.trim()
+        val poster      = document.select("..imagen-node img")?.attr("src")?.trim()
                                ?.let { fixUrlNull(it) }
         val description = document.selectFirst(".card-body p")?.text()
         val tags        = document.select("a[href*='/donghuas/']").map { it.text() }
