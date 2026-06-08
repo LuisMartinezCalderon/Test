@@ -26,7 +26,7 @@ class MundoDonghuaProvider : MainAPI() {
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse {
         val url = request.data + page
         val document = app.get(url).document
-        val home = document.select("a[href*='/donghua/']").mapNotNull { it.animeFromElement() }
+        val home = document.select("a[href*='/donghua/']").mapNotNull { it.animeFromElement("h3") }
 
         return newHomePageResponse(
                 list = HomePageList(name = request.name, list = home, isHorizontalImages = false),
@@ -34,8 +34,8 @@ class MundoDonghuaProvider : MainAPI() {
         )
     }
 
-    private fun Element.animeFromElement(): SearchResponse {
-        val title = this.select("h3").text()
+    private fun Element.animeFromElement(titulo:String): SearchResponse {
+        val title = this.select("${titulo}").text()
         val href = this.attr("href")
         val posterUrl = fixUrlNull(this.selectFirst("img")?.getImageAttr())
         val isDub     = title.contains("Latino") || title.contains("Castellano")
@@ -48,7 +48,7 @@ class MundoDonghuaProvider : MainAPI() {
     // ===== BÚSQUEDA =====
     override suspend fun search(query: String): List<SearchResponse> {
         val document = app.get("$mainUrl/busquedas/$query").document
-        return document.select("a[href*='/donghua/']").mapNotNull { it.animeFromElement() }
+        return document.select("a[href*='/donghua/']").mapNotNull { it.animeFromElement("h5") }
     }
 
     // ===== DETALLES =====

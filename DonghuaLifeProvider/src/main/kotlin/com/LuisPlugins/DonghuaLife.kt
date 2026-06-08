@@ -48,7 +48,7 @@ class DonghuaLifeProvider : MainAPI() {
     // ===== BÚSQUEDA =====
     override suspend fun search(query: String): List<SearchResponse> {
         val document = app.get("$mainUrl/search?search_api_fulltex/$query").document
-        return document.select("a[href*='/donghuas/']").mapNotNull { it.animeFromElement() }
+        return document.select("a[href*='/series/']").mapNotNull { it.animeFromElement() }
     }
 
     // ===== DETALLES =====
@@ -59,7 +59,8 @@ class DonghuaLifeProvider : MainAPI() {
                                ?.let { fixUrlNull(it) }
         val description = document.selectFirst(".card-body p")?.text()
         val tags        = document.select("a[href*='/donghuas/']").map { it.text() }
-        val epsAnchor   = document.select("a[href*='/season/']")
+        val epsAnchor = document.select("a[href*='/season/']")
+        val episodes = mutableListOf<Episode>()
 
         return if (epsAnchor.size > 1) {
             val episodes: List<Episode>? = epsAnchor.map {
