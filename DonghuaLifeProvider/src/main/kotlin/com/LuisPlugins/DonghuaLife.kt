@@ -59,7 +59,7 @@ class DonghuaLifeProvider : MainAPI() {
                                ?.let { fixUrlNull(it) }
         val description = document.selectFirst(".card-body p")?.text()
         val tags        = document.select("a[href*='/donghuas/']").map { it.text() }
-        val epsAnchor   = document.select("ul li a[href*='/season/']")
+        val epsAnchor   = document.select("a[href*='/season/']")
 
         return if (epsAnchor.size > 1) {
             val episodes: List<Episode>? = epsAnchor.map {

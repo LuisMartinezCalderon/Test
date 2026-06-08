@@ -35,7 +35,7 @@ class MundoDonghuaProvider : MainAPI() {
     }
 
     private fun Element.animeFromElement(): SearchResponse {
-        val title = this.select("h1").text()
+        val title = this.select("h3").text()
         val href = this.attr("href")
         val posterUrl = fixUrlNull(this.selectFirst("img")?.getImageAttr())
         val isDub     = title.contains("Latino") || title.contains("Castellano")
