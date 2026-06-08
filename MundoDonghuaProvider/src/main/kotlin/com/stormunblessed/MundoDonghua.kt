@@ -210,8 +210,8 @@ override suspend fun loadLinks(
 
             // ── 4. Fallback: cualquier URL http en el unpacked ───────────────
             fetchUrls(unpacked).amap { url ->
-                val fixed = url.replace("https://sbbrisk.com", "https://watchsb.com")
-                loadExtractor(fixed, datafix, subtitleCallback, callback)
+              // val fixed = url.replace("https://sbbrisk.com", "https://watchsb.com")
+                loadExtractor(url, datafix, subtitleCallback, callback)
             }
         }
     }
