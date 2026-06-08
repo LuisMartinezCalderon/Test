@@ -1,4 +1,4 @@
-package com.stormunblessed
+package com.LuisPlugins
 
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.TvType
@@ -6,10 +6,10 @@ import com.lagradost.cloudstream3.utils.*
 import com.lagradost.cloudstream3.utils.M3u8Helper.Companion.generateM3u8
 import org.jsoup.nodes.Element
 
-class MundoDonghuaProvider : MainAPI() {
+class DonghuaLifeProvider : MainAPI() {
 
-    override var mainUrl = "https://www.mundodonghua.com"
-    override var name = "MundoDonghua"
+    override var mainUrl = "https://donghualife.com/"
+    override var name = "DonghuaLife"
     override var lang = "es-mx"
     override val hasMainPage = true
     override val hasDownloadSupport   = true
