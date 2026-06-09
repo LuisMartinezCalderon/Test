@@ -25,7 +25,7 @@ class DonghuaLifeProvider : MainAPI() {
 
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse {
         val document = app.get("$mainUrl/${request.data}&p=$page").document
-        val home = document.select(".view-donghuas .serie").mapNotNull { it.animeFromElement() }
+        val home = document.select(".serie").mapNotNull { it.animeFromElement() }
 
         return newHomePageResponse(
                 list = HomePageList(
@@ -39,7 +39,7 @@ class DonghuaLifeProvider : MainAPI() {
 
     private fun Element.animeFromElement(): SearchResponse? {
         val title = this.select(".titulo")?.text()?.trim()?: ""
-        val href = "$mainUrl"+this.select("a")?.attr("href") ?: ""
+        val href = "$mainUrl"+this.select("a")?.attr("href")?: ""
         val posterUrl = this.select("img")?.attr("src")?.trim()?.let { fixUrlNull(it) }
         val isDub = title.contains("Latino") || title.contains("Castellano")
 
