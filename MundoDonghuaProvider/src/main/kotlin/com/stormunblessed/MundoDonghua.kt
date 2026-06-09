@@ -66,8 +66,8 @@ class MundoDonghuaProvider : MainAPI() {
         val statusText = document.selectFirst(".md-emision-badge")?.text()?.trim()
         val status =
                 when {
-                    statusText?.contains("emisión", ignoreCase = true) == true -> ShowStatus.Ongoing
-                    statusText?.contains("finalizado", ignoreCase = true) == true ->
+                    statusText?.contains("En Emisión", ignoreCase = true) == true -> ShowStatus.Ongoing
+                    statusText?.contains("Finalizada", ignoreCase = true) == true ->
                             ShowStatus.Completed
                     else -> null
                 }
