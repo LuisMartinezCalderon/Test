@@ -19,8 +19,8 @@ class MundoDonghuaProvider : MainAPI() {
     // ===== PÁGINA PRINCIPAL =====
     override val mainPage =
             mainPageOf(
-                    "$mainUrl/lista-donghuas/" to "Populares",
-                    "$mainUrl/lista-episodios/" to "Últimos Episodios",
+                    "$mainUrl/lista-donghuas" to "Populares",
+                    "$mainUrl/lista-episodios" to "Últimos Episodios",
             )
 
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse {

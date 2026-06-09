@@ -19,7 +19,7 @@ class DonghuaLifeProvider : MainAPI() {
     // ===== PÁGINA PRINCIPAL =====
     override val mainPage =
             mainPageOf(
-                    "$mainUrl/lista-donghuas/" to "Populares",
+                    "$mainUrl/donghuas/" to "Donghuas",
                     "$mainUrl/lista-episodios/" to "Últimos Episodios",
             )
 
