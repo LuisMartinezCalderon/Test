@@ -19,13 +19,12 @@ class DonghuaLifeProvider : MainAPI() {
     // ===== PÁGINA PRINCIPAL =====
     override val mainPage =
             mainPageOf(
-                    "$mainUrl/donghuas/" to "Donghuas",
-                    "$mainUrl/finalizado/" to "Finalizados",
+                    "donghuas/" to "Donghuas",
+                    "finalizado" to "Finalizados",
             )
 
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse {
-        val url = request.data + page
-        val document = app.get(url).document
+       val document = app.get("$mainUrl/${request.data}&p=$page").document
        val home = document.select(".view-donghuas .serie").mapNotNull { it.animeFromElement() }
         
 
