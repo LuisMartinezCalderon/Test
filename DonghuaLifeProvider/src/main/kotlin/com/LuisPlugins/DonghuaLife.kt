@@ -47,7 +47,7 @@ class DonghuaLifeProvider : MainAPI() {
 
     // ===== BÚSQUEDA =====
     override suspend fun search(query: String): List<SearchResponse> {
-        val document = app.get("$mainUrl/search?search_api_fulltex=$query").document
+        val document = app.get("$mainUrl/search?search_api_fulltext=$query").document
         return document.select("a[href*='/series/']").mapNotNull { it.animeFromElement() }
     }
 
