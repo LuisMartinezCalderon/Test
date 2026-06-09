@@ -63,6 +63,8 @@ class MundoDonghuaProvider : MainAPI() {
                 }
         val description = document.selectFirst(".md-detail-synopsis")?.text()
         val tags = document.select("a[href*='/genero/']").map { it.text() }
+        val status = document.select(".md-emision-badge")?.text()
+
         val epsAnchor = document.select("ul li a[href*='/ver/']")
 
         return if (epsAnchor.size > 1) {
@@ -79,12 +81,14 @@ class MundoDonghuaProvider : MainAPI() {
                 this.posterUrl = poster
                 this.plot = description
                 this.tags = tags
+                this.showStatus = status
             }
         } else
                 newMovieLoadResponse(title, url, TvType.AnimeMovie, epsAnchor.attr("href")) {
                     this.posterUrl = poster
                     this.plot = description
                     this.tags = tags
+                    this.showStatus = status
                 }
     }
     // ===== EXTRACCIÓN DE VIDEOS =====
