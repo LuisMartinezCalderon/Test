@@ -22,24 +22,28 @@ class DonghuaLifeProvider : MainAPI() {
                     "donghuas" to "Donghuas",
                     "finalizado" to "Finalizados",
             )
-
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse {
-        val document = app.get("$mainUrl/${request.data}&p=$page").document
-        val home = document.select(".view-donghuas .view-content .serie").mapNotNull { it.animeFromElement() }
+        // Ajusta la URL: la paginación usa ?page=0,1,2...
+        val url = "$mainUrl/${request.data}?page=${page - 1}"
+        val document = app.get(url).document
+
+        // Selector específico para las series principales
+        val home = document.select(".view-content .serie").mapNotNull { it.animeFromElement() }
+
+        // Detectar si hay siguiente página (existencia del enlace "Siguiente" activo)
+        val hasNext =
+                document.select(".pager__item--next a").any() &&
+                        !document.select(".pager__item--next.disabled").any()
 
         return newHomePageResponse(
-                list = HomePageList(
-                    name = request.name,
-                    list = home,
-                    isHorizontalImages = false
-                    ),
-                hasNext = true
+                list = HomePageList(name = request.name, list = home, isHorizontalImages = false),
+                hasNext = hasNext
         )
     }
 
     private fun Element.animeFromElement(): SearchResponse? {
-        val title = this.select(".titulo")?.text()?.trim()?: ""
-        val href = "$mainUrl"+this.select("a")?.attr("href")?: ""
+        val title = this.select(".titulo")?.text()?.trim() ?: ""
+        val href = "$mainUrl" + this.select("a")?.attr("href") ?: ""
         val posterUrl = this.select("img")?.attr("src")?.trim()?.let { fixUrlNull(it) }
         val isDub = title.contains("Latino") || title.contains("Castellano")
 
