@@ -20,7 +20,7 @@ class DonghuaLifeProvider : MainAPI() {
     override val mainPage =
             mainPageOf(
                     "$mainUrl/donghuas/" to "Donghuas",
-                    "$mainUrl/lista-episodios/" to "Últimos Episodios",
+                    "$mainUrl/finalizado/" to "Finalizados",
             )
 
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse {
@@ -35,7 +35,7 @@ class DonghuaLifeProvider : MainAPI() {
     }
 
     private fun Element.animeFromElement(): SearchResponse {
-        val title = this.select(".titulo").text()?.trim() ?: "Desconocido"
+        val title = this.selectFirst(".titulo").text()?.trim() ?: "Desconocido"
         val href = this.attr("href")
         val posterUrl = fixUrlNull(this.selectFirst("img")?.getImageAttr())
         val isDub     = title.contains("Latino") || title.contains("Castellano")
