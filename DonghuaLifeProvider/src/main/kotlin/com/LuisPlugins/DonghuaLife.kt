@@ -39,7 +39,7 @@ class DonghuaLifeProvider : MainAPI() {
 
     private fun Element.animeFromElement(): SearchResponse? {
         val title = this.select(".titulo")?.text()?.trim()?: ""
-        val href = this.selectFirst("a")?.attr("href") ?: ""
+        val href = "$mainUrl"+this.select("a")?.attr("href") ?: ""
         val posterUrl = this.select("img")?.attr("src")?.trim()?.let { fixUrlNull(it) }
         val isDub = title.contains("Latino") || title.contains("Castellano")
 
