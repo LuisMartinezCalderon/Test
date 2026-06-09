@@ -26,7 +26,7 @@ class DonghuaLifeProvider : MainAPI() {
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse {
         val url = request.data + page
         val document = app.get(url).document
-        val home = document.select(".serie").mapNotNull { it.animeFromElement() }
+        val home = document.selectf(".view-donghuas").mapNotNull { it.animeFromElement() }
 
         return newHomePageResponse(
                 list = HomePageList(name = request.name, list = home, isHorizontalImages = false),
@@ -50,7 +50,7 @@ class DonghuaLifeProvider : MainAPI() {
     // ===== BÚSQUEDA =====
     override suspend fun search(query: String): List<SearchResponse> {
         val document = app.get("$mainUrl/search?search_api_fulltext=$query").document
-        return document.select("a[href*='/series/']").mapNotNull { it.animeFromElement() }
+        return document.select(".view-search").mapNotNull { it.animeFromElement() }
     }
 
     // ===== DETALLES =====
