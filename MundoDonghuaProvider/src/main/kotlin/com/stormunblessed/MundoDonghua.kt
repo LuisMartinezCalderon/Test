@@ -22,8 +22,8 @@ class MundoDonghuaProvider : MainAPI() {
                     "$mainUrl/lista-donghuas/" to "Populares",
                     "$mainUrl/lista-donghuas-finalizados/" to "Finalizados",
                     "$mainUrl/lista-donghuas-emision/" to "Emision",
-                   // "$mainUrl/lista-episodios/" to "Últimos Episodios",
-            )
+                    // "$mainUrl/lista-episodios/" to "Últimos Episodios",
+                    )
 
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse {
         val url = request.data + page
@@ -63,7 +63,14 @@ class MundoDonghuaProvider : MainAPI() {
                 }
         val description = document.selectFirst(".md-detail-synopsis")?.text()
         val tags = document.select("a[href*='/genero/']").map { it.text() }
-        val status = document.select(".md-emision-badge")?.text()
+        val statusText = document.selectFirst(".md-emision-badge")?.text()?.trim()
+        val status =
+                when {
+                    statusText?.contains("emisión", ignoreCase = true) == true -> ShowStatus.Ongoing
+                    statusText?.contains("finalizado", ignoreCase = true) == true ->
+                            ShowStatus.Completed
+                    else -> null
+                }
 
         val epsAnchor = document.select("ul li a[href*='/ver/']")
 
@@ -88,7 +95,7 @@ class MundoDonghuaProvider : MainAPI() {
                     this.posterUrl = poster
                     this.plot = description
                     this.tags = tags
-                    this.showStatus = status
+                
                 }
     }
     // ===== EXTRACCIÓN DE VIDEOS =====
