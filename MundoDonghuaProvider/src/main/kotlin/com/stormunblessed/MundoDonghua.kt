@@ -22,7 +22,7 @@ class MundoDonghuaProvider : MainAPI() {
                     "$mainUrl/lista-donghuas/" to "Populares",
                     "$mainUrl/lista-donghuas-finalizados/" to "Finalizados",
                     "$mainUrl/lista-donghuas-emision/" to "Emision",
-                    "$mainUrl/lista-episodios/" to "Últimos Episodios",
+                   // "$mainUrl/lista-episodios/" to "Últimos Episodios",
             )
 
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse {
