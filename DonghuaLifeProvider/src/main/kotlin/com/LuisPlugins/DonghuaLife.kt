@@ -22,35 +22,32 @@ class DonghuaLifeProvider : MainAPI() {
                     "donghuas" to "Donghuas",
                     "finalizado" to "Finalizados",
             )
-   override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse {
-    // 1. Siempre construimos la URL con el parámetro ?page=
-    // Asumimos que el primer parámetro es page-1, así page=1 se convierte en ?page=0, page=2 en ?page=1, etc.
-    val url = "$mainUrl/donghuas?page=${page - 1}"
-    
-    // Para depuración, imprime la URL que se está usando
-    println("Intentando cargar: $url")
+    override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse {
+        // 1. Siempre construimos la URL con el parámetro ?page=
+        // Asumimos que el primer parámetro es page-1, así page=1 se convierte en ?page=0, page=2 en
+        // ?page=1, etc.
+        val url = "$mainUrl/page?page=${page - 1}"
 
-    // 2. Hacemos la petición (igual que en tu buscador)
-    val document = app.get(url).document
+        // Para depuración, imprime la URL que se está usando
+        println("Intentando cargar: $url")
 
-    // 3. Seleccionamos las series
-    // El selector .view-donghuas .serie es específico para esta vista y debería funcionar.
-    val home = document.select(".view-donghuas .serie").mapNotNull { it.animeFromElement() }
+        // 2. Hacemos la petición (igual que en tu buscador)
+        val document = app.get(url).document
 
-    // 4. Lógica para saber si hay más páginas
-    // Comprobamos si el enlace "Siguiente" existe y si no tiene la clase 'disabled'
-    val nextPageLink = document.select(".pager__item--next a")
-    val hasNext = nextPageLink.any() && !nextPageLink.attr("href").isNullOrEmpty()
+        // 3. Seleccionamos las series
+        // El selector .view-donghuas .serie es específico para esta vista y debería funcionar.
+        val home = document.select(".view-donghuas .serie").mapNotNull { it.animeFromElement() }
 
-    return newHomePageResponse(
-        list = HomePageList(
-            name = request.name,
-            list = home,
-            isHorizontalImages = false
-        ),
-        hasNext = hasNext
-    )
-}
+        // 4. Lógica para saber si hay más páginas
+        // Comprobamos si el enlace "Siguiente" existe y si no tiene la clase 'disabled'
+        val nextPageLink = document.select(".pager__item--next a")
+        val hasNext = nextPageLink.any() && !nextPageLink.attr("href").isNullOrEmpty()
+
+        return newHomePageResponse(
+                list = HomePageList(name = request.name, list = home, isHorizontalImages = false),
+                hasNext = hasNext
+        )
+    }
 
     private fun Element.animeFromElement(): SearchResponse? {
         val title = this.select(".titulo")?.text()?.trim() ?: ""
