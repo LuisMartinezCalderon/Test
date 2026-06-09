@@ -25,7 +25,7 @@ class DonghuaLifeProvider : MainAPI() {
 
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse {
         val document = app.get("$mainUrl/${request.data}&p=$page").document
-        val home = document.select("div.view.view-donghuas .serie").mapNotNull { it.animeFromElement() }
+        val home = document.select("#block-dlife-content").mapNotNull { it.animeFromElement() }
 
         return newHomePageResponse(
                 list = HomePageList(
