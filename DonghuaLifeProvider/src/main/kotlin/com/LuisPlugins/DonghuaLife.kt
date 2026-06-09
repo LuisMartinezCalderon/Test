@@ -10,8 +10,8 @@ class DonghuaLifeProvider : MainAPI() {
 
     override var mainUrl = "https://donghualife.com/"
     override var name = "DonghuaLife"
-    override var lang = "es-mx"
     override val hasMainPage = true
+    override var lang = "es-mx"
     override val hasDownloadSupport = true
     override val hasQuickSearch = true
     override val supportedTypes = setOf(TvType.Anime, TvType.AnimeMovie, TvType.OVA)
@@ -19,26 +19,28 @@ class DonghuaLifeProvider : MainAPI() {
     // ===== PÁGINA PRINCIPAL =====
     override val mainPage =
             mainPageOf(
-                    "donghuas/" to "Donghuas",
+                    "donghuas" to "Donghuas",
                     "finalizado" to "Finalizados",
             )
 
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse {
-       val document = app.get("$mainUrl/${request.data}&p=$page").document
-       val home = document.select(".view-donghuas .serie").mapNotNull { it.animeFromElement() }
-        
+        val document = app.get("$mainUrl/${request.data}&p=$page").document
+        val home = document.select(".view-donghuas .serie").mapNotNull { it.animeFromElement() }
 
         return newHomePageResponse(
-                list = HomePageList(name = request.name, list = home, isHorizontalImages = false),
+                list = HomePageList(
+                    name = request.name,
+                    list = home,
+                    isHorizontalImages = false
+                    ),
                 hasNext = true
         )
     }
 
     private fun Element.animeFromElement(): SearchResponse? {
-        val title = this.select(".titulo")?.text()?.trim() ?: return null
-        val href = this.select("a")?.attr("href") ?: return null
+        val title = this.select(".titulo")?.text()?.trim()?: ""
+        val href = this.selectFirst("a")?.attr("href") ?: ""
         val posterUrl = this.select("img")?.attr("src")?.trim()?.let { fixUrlNull(it) }
-
         val isDub = title.contains("Latino") || title.contains("Castellano")
 
         return newAnimeSearchResponse(title, fixUrl(href), TvType.Anime) {
