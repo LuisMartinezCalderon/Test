@@ -19,26 +19,27 @@ class DonghuaLifeProvider : MainAPI() {
     // ===== PÁGINA PRINCIPAL =====
     override val mainPage =
             mainPageOf(
-                    "$mainUrl/donghuas?page=" to "Donghuas",
-                    "$mainUrl/finalizado?page=" to "Finalizados",
+                    "donghuas?page=" to "Donghuas",
+                    "finalizado?page=" to "Finalizados",
             )
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse {
         // 1. Siempre construimos la URL con el parámetro ?page=
         // Asumimos que el primer parámetro es page-1, así page=1 se convierte en ?page=0, page=2 en
         // ?page=1, etc.
-          //val url = request.data + {page - 1}
-        val url = "$mainUrl${page - 1}"
+         val document = app.get("$mainUrl/${request.data}&p=$page").document
+          val url = request.data + {page}
+       // val url = "$mainUrl${page - 1}"
       //  "$mainUrl/donghuas?page=${page - 1}"
 
         // Para depuración, imprime la URL que se está usando
         println("Intentando cargar: $url")
 
         // 2. Hacemos la petición (igual que en tu buscador)
-        val document = app.get(url).document
+      // val document = app.get(url).document
 
         // 3. Seleccionamos las series
         // El selector .view-donghuas .serie es específico para esta vista y debería funcionar.
-        val home = document.select(".view-donghuas .serie").mapNotNull { it.animeFromElement() }
+        val home = document.select("#block-dlife-content .serie").mapNotNull { it.animeFromElement() }
 
         // 4. Lógica para saber si hay más páginas
         // Comprobamos si el enlace "Siguiente" existe y si no tiene la clase 'disabled'
