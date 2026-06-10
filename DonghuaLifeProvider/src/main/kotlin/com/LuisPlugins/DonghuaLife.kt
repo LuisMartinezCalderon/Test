@@ -26,7 +26,7 @@ class DonghuaLifeProvider : MainAPI() {
         // 1. Siempre construimos la URL con el parámetro ?page=
         // Asumimos que el primer parámetro es page-1, así page=1 se convierte en ?page=0, page=2 en
         // ?page=1, etc.
-          val url = request.data + page
+          val url = request.data + {page - 1}
        // val url = "$mainUrl${page - 1}"
       //  "$mainUrl/donghuas?page=${page - 1}"
 
