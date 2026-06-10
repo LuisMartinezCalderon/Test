@@ -19,14 +19,14 @@ class DonghuaLifeProvider : MainAPI() {
     // ===== PÁGINA PRINCIPAL =====
     override val mainPage =
             mainPageOf(
-                    "$mainUrl/donghuas?page=" to "Donghuas",
-                    "$mainUrl/finalizado?page=" to "Finalizados",
+                    "$mainUrl/donghuas?page=0" to "Donghuas",
+                    "$mainUrl/finalizado?page=0" to "Finalizados",
             )
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse {
         // 1. Siempre construimos la URL con el parámetro ?page=
         // Asumimos que el primer parámetro es page-1, así page=1 se convierte en ?page=0, page=2 en
         // ?page=1, etc.
-          val url = request.data + {page + 0}
+          val url = request.data + {page}
        // val url = "$mainUrl${page - 1}"
       //  "$mainUrl/donghuas?page=${page - 1}"
 
