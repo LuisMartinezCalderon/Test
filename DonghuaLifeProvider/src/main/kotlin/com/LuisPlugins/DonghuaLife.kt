@@ -32,7 +32,7 @@ class DonghuaLifeProvider : MainAPI() {
       //  "$mainUrl/donghuas?page=${page - 1}"
 
         // Para depuración, imprime la URL que se está usando
-        println("Intentando cargar: $mainUrl/${request.data}{$page - 1}")
+        println("Intentando cargar: $mainUrl/${request.data}${page - 1}")
 
         // 2. Hacemos la petición (igual que en tu buscador)
       // val document = app.get(url).document
