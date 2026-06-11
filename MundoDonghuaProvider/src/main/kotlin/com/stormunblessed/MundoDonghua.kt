@@ -1,14 +1,13 @@
 package com.stormunblessed
- 
+
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.TvType
 import com.lagradost.cloudstream3.utils.*
 import com.lagradost.cloudstream3.utils.M3u8Helper.Companion.generateM3u8
-import com.lagradost.cloudstream3.network.CloudflareKiller
 import org.jsoup.nodes.Element
- 
+
 class MundoDonghuaProvider : MainAPI() {
- 
+
     override var mainUrl = "https://www.mundodonghua.com"
     override var name = "MundoDonghua"
     override var lang = "es-mx"
@@ -16,46 +15,27 @@ class MundoDonghuaProvider : MainAPI() {
     override val hasDownloadSupport = true
     override val hasQuickSearch = true
     override val supportedTypes = setOf(TvType.Anime, TvType.AnimeMovie, TvType.OVA)
- 
-    // ── CloudflareKiller: bypasea el challenge JS de Cloudflare ──────────────
-    // Abre un WebView invisible, resuelve el challenge y guarda las cookies
-    // cf_clearance + User-Agent para reutilizarlas en las siguientes requests.
-    private val cfKiller = CloudflareKiller()
- 
-    // ── Headers base reutilizados en todas las requests ───────────────────────
-    private val baseHeaders = mapOf(
-        "User-Agent"                to "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/115.0",
-        "Accept"                    to "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-        "Accept-Language"           to "es-MX,es;q=0.8,en-US;q=0.5,en;q=0.3",
-        "Accept-Encoding"           to "gzip, deflate, br",
-        "DNT"                       to "1",
-        "Connection"                to "keep-alive",
-        "Upgrade-Insecure-Requests" to "1",
-        "Sec-Fetch-Dest"            to "document",
-        "Sec-Fetch-Mode"            to "navigate",
-        "Sec-Fetch-Site"            to "none",
-        "Sec-Fetch-User"            to "?1",
-    )
- 
+
     // ===== PÁGINA PRINCIPAL =====
     override val mainPage =
             mainPageOf(
                     "$mainUrl/lista-donghuas/" to "Populares",
                     "$mainUrl/lista-donghuas-finalizados/" to "Finalizados",
                     "$mainUrl/lista-donghuas-emision/" to "Emision",
-            )
- 
+                    // "$mainUrl/lista-episodios/" to "Últimos Episodios",
+                    )
+
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse {
         val url = request.data + page
-        val document = app.get(url, headers = baseHeaders, interceptor = cfKiller).document
+        val document = app.get(url).document
         val home = document.select("a[href*='/donghua/']").mapNotNull { it.animeFromElement("h3") }
- 
+
         return newHomePageResponse(
                 list = HomePageList(name = request.name, list = home, isHorizontalImages = false),
                 hasNext = true
         )
     }
- 
+
     private fun Element.animeFromElement(titulo: String): SearchResponse {
         val title = this.select("${titulo}").text()
         val href = this.attr("href")
@@ -66,16 +46,16 @@ class MundoDonghuaProvider : MainAPI() {
             addDubStatus(isDub)
         }
     }
- 
+
     // ===== BÚSQUEDA =====
     override suspend fun search(query: String): List<SearchResponse> {
-        val document = app.get("$mainUrl/busquedas/$query", headers = baseHeaders, interceptor = cfKiller).document
+        val document = app.get("$mainUrl/busquedas/$query").document
         return document.select("a[href*='/donghua/']").mapNotNull { it.animeFromElement("h5") }
     }
- 
+
     // ===== DETALLES =====
     override suspend fun load(url: String): LoadResponse {
-        val document = app.get(url, headers = baseHeaders, interceptor = cfKiller).document
+        val document = app.get(url).document
         val title = document.selectFirst("h1")?.text() ?: "Desconocido"
         val poster =
                 document.select(".md-detail-banner-bg img")?.attr("src")?.trim()?.let {
@@ -91,18 +71,18 @@ class MundoDonghuaProvider : MainAPI() {
                             ShowStatus.Completed
                     else -> null
                 }
- 
+
         val epsAnchor = document.select("ul li a[href*='/ver/']")
- 
+
         return if (epsAnchor.size > 1) {
             val episodes: List<Episode>? =
                     epsAnchor.map {
                         val epPoster = it.select("img")?.attr("src")?.trim()?.let { fixUrlNull(it) }
                         val epHref = it.attr("href")
- 
+
                         newEpisode(epHref) { this.posterUrl = epPoster }
                     }
- 
+
             newAnimeLoadResponse(title, url, TvType.Anime) {
                 addEpisodes(DubStatus.Subbed, episodes)
                 this.posterUrl = poster
@@ -115,6 +95,7 @@ class MundoDonghuaProvider : MainAPI() {
                     this.posterUrl = poster
                     this.plot = description
                     this.tags = tags
+                
                 }
     }
     // ===== EXTRACCIÓN DE VIDEOS =====
