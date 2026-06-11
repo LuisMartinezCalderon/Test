@@ -28,7 +28,7 @@ class MundoDonghuaProvider : MainAPI() {
 
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse {
         val url = request.data + page
-        val document = app.get(url,headers = headers).document
+        val document = app.get(url,headers = headers,CloudflareKiller()).document
         val home = document.select("a[href*='/donghua/']").mapNotNull { it.animeFromElement("h3") }
 
         return newHomePageResponse(
