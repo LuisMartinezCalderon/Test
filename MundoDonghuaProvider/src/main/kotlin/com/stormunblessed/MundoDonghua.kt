@@ -369,8 +369,8 @@ class MundoDonghuaProvider : MainAPI() {
 
   private val headers = mapOf(
         "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
-        "Accept" to "text/html,application/xhtml+xml,*/*;q=0.8",
-        "Accept-Language" to "en-US,en;q=0.5",
+        "Accept" to "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+        "Accept-Language" to "es,es-ES;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6",
         "Referer" to mainUrl
 )
     fun fixUrlNull(url: String?): String? {
