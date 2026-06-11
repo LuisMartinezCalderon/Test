@@ -5,7 +5,8 @@ import com.lagradost.cloudstream3.TvType
 import com.lagradost.cloudstream3.utils.*
 import com.lagradost.cloudstream3.utils.M3u8Helper.Companion.generateM3u8
 import org.jsoup.nodes.Element
-//import com.lagradost.cloudstream3.network.CloudflareKiller
+
+// import com.lagradost.cloudstream3.network.CloudflareKiller
 
 class MundoDonghuaProvider : MainAPI() {
 
@@ -28,7 +29,7 @@ class MundoDonghuaProvider : MainAPI() {
 
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse {
         val url = request.data + page
-        val document = app.get(url,headers = headers).document
+        val document = app.get(url, headers = headers).document
         val home = document.select("a[href*='/donghua/']").mapNotNull { it.animeFromElement("h3") }
 
         return newHomePageResponse(
@@ -67,7 +68,8 @@ class MundoDonghuaProvider : MainAPI() {
         val statusText = document.selectFirst(".md-emision-badge")?.text()?.trim()
         val status =
                 when {
-                    statusText?.contains("En Emisión", ignoreCase = true) == true -> ShowStatus.Ongoing
+                    statusText?.contains("En Emisión", ignoreCase = true) == true ->
+                            ShowStatus.Ongoing
                     statusText?.contains("Finalizada", ignoreCase = true) == true ->
                             ShowStatus.Completed
                     else -> null
@@ -96,7 +98,6 @@ class MundoDonghuaProvider : MainAPI() {
                     this.posterUrl = poster
                     this.plot = description
                     this.tags = tags
-                
                 }
     }
     // ===== EXTRACCIÓN DE VIDEOS =====
@@ -367,12 +368,7 @@ class MundoDonghuaProvider : MainAPI() {
         return candidates.map { this.attr(it) }.firstOrNull { it.isNotBlank() }
     }
 
-  private val headers = mapOf(
-        "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
-        "Accept" to "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-        "Accept-Language" to "es,es-ES;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6",
-        "Referer" to mainUrl
-)
+    private val headers = mapOf("User-Agent" to USER_AGENT, "Referer" to mainUrl)
     fun fixUrlNull(url: String?): String? {
         if (url.isNullOrBlank()) return null
         return if (url.startsWith("/")) {
