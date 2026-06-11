@@ -5,7 +5,7 @@ import com.lagradost.cloudstream3.TvType
 import com.lagradost.cloudstream3.utils.*
 import com.lagradost.cloudstream3.utils.M3u8Helper.Companion.generateM3u8
 import org.jsoup.nodes.Element
-import com.lagradost.cloudstream3.network.CloudflareKiller
+//import com.lagradost.cloudstream3.network.CloudflareKiller
 
 class MundoDonghuaProvider : MainAPI() {
 
@@ -28,7 +28,7 @@ class MundoDonghuaProvider : MainAPI() {
 
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse {
         val url = request.data + page
-        val document = app.get(url,headers = headers, interceptor = CloudflareKiller()).document
+        val document = app.get(url,headers = headers).document
         val home = document.select("a[href*='/donghua/']").mapNotNull { it.animeFromElement("h3") }
 
         return newHomePageResponse(
