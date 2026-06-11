@@ -367,25 +367,13 @@ class MundoDonghuaProvider : MainAPI() {
         return candidates.map { this.attr(it) }.firstOrNull { it.isNotBlank() }
     }
 
-    private val headers = mapOf(
-    "Accept" to "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-    "Accept-Encoding" to "gzip, deflate, br, zstd",
-    "Accept-Language" to "es,es-ES;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6",
-    "Cache-Control" to "no-cache",
-    "DNT" to "1",
-    "Pragma" to "no-cache",
-    "Priority" to "u=0, i",
-    "Referer" to "$mainUrl/lista-donghuas",
-    "Sec-Ch-Ua" to "\"Chromium\";v=\"148\", \"Microsoft Edge\";v=\"148\", \"Not/A)Brand\";v=\"99\"",
-    "Sec-Ch-Ua-Mobile" to "?0",
-    "Sec-Ch-Ua-Platform" to "\"Windows\"",
-    "Sec-Fetch-Dest" to "document",
-    "Sec-Fetch-Mode" to "navigate",
-    "Sec-Fetch-Site" to "same-origin",
-    "Upgrade-Insecure-Requests" to "1",
-    "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36 Edg/148.0.0.0"
+  private val headers = mapOf(
+    "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+    "Referer" to "$mainUrl/",
+    "Accept" to "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept-Language" to "es-ES,es;q=0.9,en;q=0.8",
+    "DNT" to "1"
 )
-
     fun fixUrlNull(url: String?): String? {
         if (url.isNullOrBlank()) return null
         return if (url.startsWith("/")) {
