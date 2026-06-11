@@ -61,3 +61,73 @@ fun Http(url: String): String {
         url
     }
 }
+
+class RumbleExtractor : ExtractorApi() {
+    override var name = "Rumble"
+    override var mainUrl = "https://rumble.com"
+    override val requiresReferer = false
+
+    override suspend fun getUrl(
+        url: String,
+        referer: String?
+    ): List<ExtractorLink>? {
+
+        val headers = mapOf(
+            "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " +
+                    "AppleWebKit/537.36 (KHTML, like Gecko) " +
+                    "Chrome/124.0.0.0 Safari/537.36",
+            "Referer" to (referer ?: mainUrl)
+        )
+
+        val response = app.get(url, headers = headers).text
+
+        val links = mutableListOf<ExtractorLink>()
+
+        // ── 1. Busca el JSON embedsito con las fuentes ──────────────────────────
+        // Rumble inyecta algo como: "ua":{"mp4":{"360":{"url":"https://..."}}}
+        val videoJsonRegex = Regex(""""ua"\s*:\s*(\{[\s\S]+?"mp4"[\s\S]+?\})\s*,\s*"i""")
+        val jsonBlock = videoJsonRegex.find(response)?.groupValues?.get(1)
+
+        if (jsonBlock != null) {
+            // Extrae cada URL de mp4 con su etiqueta de calidad
+            val mp4Regex = Regex(""""(\d+)"\s*:\s*\{"url"\s*:\s*"([^"]+\.mp4[^"]*)"""")
+            mp4Regex.findAll(jsonBlock).forEach { match ->
+                val quality = match.groupValues[1].toIntOrNull() ?: Qualities.Unknown.value
+                val videoUrl = match.groupValues[2].replace("\\/", "/")
+                links.add(
+                    newExtractorLink(
+                        source = name,
+                        name = "$name ${quality}p",
+                        url = videoUrl,
+                        type = ExtractorLinkType.VIDEO
+                    ) {
+                        this.referer = url
+                        this.quality = quality
+                    }
+                )
+            }
+        }
+
+        // ── 2. Fallback: busca un m3u8 directo ─────────────────────────────────
+        if (links.isEmpty()) {
+            val m3u8Regex = Regex(""""hls"\s*:\s*\{"url"\s*:\s*"([^"]+\.m3u8[^"]*)"""")
+            m3u8Regex.find(response)?.groupValues?.get(1)
+                ?.replace("\\/", "/")
+                ?.let { m3u8Url ->
+                    links.add(
+                        newExtractorLink(
+                            source = name,
+                            name = name,
+                            url = m3u8Url,
+                            type = ExtractorLinkType.M3U8
+                        ) {
+                            this.referer = url
+                            this.quality = Qualities.Unknown.value
+                        }
+                    )
+                }
+        }
+
+        return links.ifEmpty { null }
+    }
+}
