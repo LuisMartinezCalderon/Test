@@ -368,7 +368,7 @@ class MundoDonghuaProvider : MainAPI() {
     }
 
   private val headers = mapOf(
-        "User-Agent" to USER_AGENT,
+        "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
         "Accept" to "text/html,application/xhtml+xml,*/*;q=0.8",
         "Accept-Language" to "en-US,en;q=0.5",
         "Referer" to mainUrl
