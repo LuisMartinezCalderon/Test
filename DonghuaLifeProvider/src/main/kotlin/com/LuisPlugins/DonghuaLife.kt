@@ -26,20 +26,21 @@ class DonghuaLifeProvider : MainAPI() {
         // 1. Siempre construimos la URL con el parámetro ?page=
         // Asumimos que el primer parámetro es page-1, así page=1 se convierte en ?page=0, page=2 en
         // ?page=1, etc.
-         val document = app.get("$mainUrl/${request.data}$page").document
-         // val url = request.data + {page}
-       // val url = "$mainUrl${page - 1}"
-      //  "$mainUrl/donghuas?page=${page - 1}"
+        val document = app.get("$mainUrl/${request.data}$page").document
+        // val url = request.data + {page}
+        // val url = "$mainUrl${page - 1}"
+        //  "$mainUrl/donghuas?page=${page - 1}"
 
         // Para depuración, imprime la URL que se está usando
         println("Intentando cargar: $mainUrl/${request.data}${page - 1}")
 
         // 2. Hacemos la petición (igual que en tu buscador)
-      // val document = app.get(url).document
+        // val document = app.get(url).document
 
         // 3. Seleccionamos las series
         // El selector .view-donghuas .serie es específico para esta vista y debería funcionar.
-        val home = document.select("#block-dlife-content .serie").mapNotNull { it.animeFromElement() }
+        val home =
+                document.select("#block-dlife-content .serie").mapNotNull { it.animeFromElement() }
 
         // 4. Lógica para saber si hay más páginas
         // Comprobamos si el enlace "Siguiente" existe y si no tiene la clase 'disabled'
@@ -77,31 +78,44 @@ class DonghuaLifeProvider : MainAPI() {
         val poster =
                 document.select(".imagen-node img")?.attr("src")?.trim()?.let { fixUrlNull(it) }
         val description = document.selectFirst(".card-body p")?.text()
-        val tags = document.select("a[href*='/donghuas/']").map { it.text() }
-        val epsAnchor = document.select("a[href*='/season/']")
+        val genreTags = document.select("a[href*='/donghuas/']").map { it.text() } // 👈 renombrada
+
+        val seasons = document.select(".temporada .serie")
         val episodes = mutableListOf<Episode>()
 
-        return if (epsAnchor.size > 1) {
-            val episodes: List<Episode>? =
-                    epsAnchor.map {
-                        val epPoster = it.select("img")?.attr("src")?.trim()?.let { fixUrlNull(it) }
-                        val epHref = it.attr("href")
+        seasons.forEach { seasonItem ->
+            val seasonUrl = fixUrl(seasonItem.selectFirst("a")?.attr("href") ?: return@forEach)
 
-                        newEpisode(epHref) { this.posterUrl = epPoster }
-                    }
+            val seasonTitle = seasonItem.selectFirst(".titulo")?.text() ?: ""
 
-            newAnimeLoadResponse(title, url, TvType.Anime) {
-                addEpisodes(DubStatus.Subbed, episodes)
-                this.posterUrl = poster
-                this.plot = description
-                this.tags = tags
+            val seasonNumber =
+                    Regex("(\\d+)$").find(seasonTitle)?.groupValues?.get(1)?.toIntOrNull() ?: 1
+
+            val seasonDoc = app.get(seasonUrl).document
+
+            seasonDoc.select("tbody tr").forEach { row ->
+                val epNumber = row.selectFirst("th")?.text()?.toIntOrNull()
+
+                val link = row.selectFirst("a") ?: return@forEach
+
+                val epUrl = fixUrl(link.attr("href"))
+
+                episodes.add(
+                        newEpisode(epUrl) {
+                            name = link.text()
+                            episode = epNumber
+                            this.season = seasonNumber
+                        }
+                )
             }
-        } else
-                newMovieLoadResponse(title, url, TvType.AnimeMovie, epsAnchor.attr("href")) {
-                    this.posterUrl = poster
-                    this.plot = description
-                    this.tags = tags
-                }
+        }
+
+        return newAnimeLoadResponse(title, url, TvType.Anime) {
+            addEpisodes(DubStatus.Subbed, episodes)
+            posterUrl = poster
+            plot = description
+            tags = genreTags // 👈 ahora referencia la variable externa sin ambigüedad
+        }
     }
     // ===== EXTRACCIÓN DE VIDEOS =====
 
