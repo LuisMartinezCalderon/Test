@@ -131,3 +131,65 @@ class RumbleExtractor : ExtractorApi() {
         return links.ifEmpty { null }
     }
 }
+class OdyseeExtractor : ExtractorApi() {
+    override var name = "Odysee"
+    override var mainUrl = "https://odysee.com"
+    override val requiresReferer = false
+
+    override suspend fun getUrl(
+        url: String,
+        referer: String?
+    ): List<ExtractorLink>? {
+
+        val headers = mapOf(
+            "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " +
+                    "AppleWebKit/537.36 (KHTML, like Gecko) " +
+                    "Chrome/124.0.0.0 Safari/537.36",
+            "Referer" to (referer ?: mainUrl)
+        )
+
+        val response = app.get(url, headers = headers).text
+
+        val links = mutableListOf<ExtractorLink>()
+
+        // ── 1. Busca el m3u8 directo en el HTML del embed ──────────────────────
+        Regex(""""contentUrl"\s*:\s*"([^"]+\.m3u8[^"]*)"""")
+            .find(response)?.groupValues?.get(1)
+            ?.replace("\\/", "/")
+            ?.let { m3u8Url ->
+                links.add(
+                    newExtractorLink(
+                        source = name,
+                        name = name,
+                        url = m3u8Url,
+                        type = ExtractorLinkType.M3U8
+                    ) {
+                        this.referer = url
+                        this.quality = Qualities.Unknown.value
+                    }
+                )
+            }
+
+        // ── 2. Fallback: mp4 directo ───────────────────────────────────────────
+        if (links.isEmpty()) {
+            Regex(""""contentUrl"\s*:\s*"([^"]+\.mp4[^"]*)"""")
+                .find(response)?.groupValues?.get(1)
+                ?.replace("\\/", "/")
+                ?.let { mp4Url ->
+                    links.add(
+                        newExtractorLink(
+                            source = name,
+                            name = name,
+                            url = mp4Url,
+                            type = ExtractorLinkType.VIDEO
+                        ) {
+                            this.referer = url
+                            this.quality = Qualities.Unknown.value
+                        }
+                    )
+                }
+        }
+
+        return links.ifEmpty { null }
+    }
+}

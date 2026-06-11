@@ -117,50 +117,76 @@ class DonghuaLifeProvider : MainAPI() {
         }
     }
     // ===== EXTRACCIÓN DE VIDEOS =====
-  override suspend fun loadLinks(
-    data: String,
-    isCasting: Boolean,
-    subtitleCallback: (SubtitleFile) -> Unit,
-    callback: (ExtractorLink) -> Unit,
-): Boolean {
-    val datafix = data.replace("ñ", "%C3%B1")
-    val refererHeaders = mapOf(
-        "User-Agent" to USER_AGENT,
-        "Accept" to "*/*",
-        "Accept-Language" to "en-US,en;q=0.5",
-        "X-Requested-With" to "XMLHttpRequest",
-        "Referer" to datafix,
-        "DNT" to "1",
-        "Connection" to "keep-alive",
-    )
+    override suspend fun loadLinks(
+            data: String,
+            isCasting: Boolean,
+            subtitleCallback: (SubtitleFile) -> Unit,
+            callback: (ExtractorLink) -> Unit,
+    ): Boolean {
+        val datafix = data.replace("ñ", "%C3%B1")
+        val refererHeaders =
+                mapOf(
+                        "User-Agent" to USER_AGENT,
+                        "Accept" to "*/*",
+                        "Accept-Language" to "en-US,en;q=0.5",
+                        "X-Requested-With" to "XMLHttpRequest",
+                        "Referer" to datafix,
+                        "DNT" to "1",
+                        "Connection" to "keep-alive",
+                )
 
-    val document = app.get(datafix, headers = refererHeaders).document
+        val document = app.get(datafix, headers = refererHeaders).document
 
-    // ── 1. Links directos en data-video ────────────────────────────────────────
-    document.select("a.toggle-enlace[data-video]").amap { anchor ->
-        val videoUrl = anchor.attr("data-video").trim()
-        if (videoUrl.startsWith("http")) {
-            // Rumble lo maneja RumbleExtractor, el resto va al loadExtractor normal
-            if (videoUrl.contains("rumble.com")) {
-                RumbleExtractor().getUrl(videoUrl, datafix)?.forEach(callback)
-            } else {
-                loadExtractor(videoUrl, datafix, subtitleCallback, callback)
+        // ── 1. Links directos en data-video ────────────────────────────────────────
+        document.select("a.toggle-enlace[data-video]").amap { anchor ->
+            val videoUrl = anchor.attr("data-video").trim()
+            if (videoUrl.startsWith("http")) {
+                // Rumble lo maneja RumbleExtractor, el resto va al loadExtractor normal
+                if (videoUrl.contains("rumble.com")) {
+                    RumbleExtractor().getUrl(videoUrl, datafix)?.forEach(callback)
+                } else {
+                    loadExtractor(videoUrl, datafix, subtitleCallback, callback)
+                }
             }
         }
-    }
 
-    // ── 2. Iframe activo como fallback ──────────────────────────────────────────
-    document.select("iframe#iframe-episode[src]").amap { iframe ->
-        val src = iframe.attr("src").trim()
-        if (src.startsWith("http")) {
-            if (src.contains("rumble.com")) {
-                RumbleExtractor().getUrl(src, datafix)?.forEach(callback)
-            } else {
-                loadExtractor(src, datafix, subtitleCallback, callback)
+        // ── 2. Iframe activo como fallback ──────────────────────────────────────────
+        document.select("iframe#iframe-episode[src]").amap { iframe ->
+            val src = iframe.attr("src").trim()
+            if (src.startsWith("http")) {
+                if (src.contains("rumble.com")) {
+                    RumbleExtractor().getUrl(src, datafix)?.forEach(callback)
+                } else {
+                    loadExtractor(src, datafix, subtitleCallback, callback)
+                }
             }
         }
-    }
+        document.select("a.toggle-enlace[data-video]").amap { anchor ->
+            val videoUrl = anchor.attr("data-video").trim()
+            if (videoUrl.startsWith("http")) {
+                when {
+                    videoUrl.contains("rumble.com") ->
+                            RumbleExtractor().getUrl(videoUrl, datafix)?.forEach(callback)
+                    videoUrl.contains("odysee.com") ->
+                            OdyseeExtractor().getUrl(videoUrl, datafix)?.forEach(callback)
+                    else -> loadExtractor(videoUrl, datafix, subtitleCallback, callback)
+                }
+            }
+        }
 
-    return true
-}
+        document.select("iframe#iframe-episode[src]").amap { iframe ->
+            val src = iframe.attr("src").trim()
+            if (src.startsWith("http")) {
+                when {
+                    src.contains("rumble.com") ->
+                            RumbleExtractor().getUrl(src, datafix)?.forEach(callback)
+                    src.contains("odysee.com") ->
+                            OdyseeExtractor().getUrl(src, datafix)?.forEach(callback)
+                    else -> loadExtractor(src, datafix, subtitleCallback, callback)
+                }
+            }
+        }
+
+        return true
+    }
 }
