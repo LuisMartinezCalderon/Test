@@ -85,7 +85,7 @@ class MundoDonghuaProvider : MainAPI() {
 
                         newEpisode(epHref) { this.posterUrl = epPoster }
                     }
-
+            
             newAnimeLoadResponse(title, url, TvType.Anime) {
                 addEpisodes(DubStatus.Subbed, episodes)
                 this.posterUrl = poster

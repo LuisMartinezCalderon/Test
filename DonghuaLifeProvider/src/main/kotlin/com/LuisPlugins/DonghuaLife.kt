@@ -108,7 +108,7 @@ class DonghuaLifeProvider : MainAPI() {
                 )
             }
         }
-
+        episodes.reverse()
         return newAnimeLoadResponse(title, url, TvType.Anime) {
             addEpisodes(DubStatus.Subbed, episodes)
             posterUrl = poster
