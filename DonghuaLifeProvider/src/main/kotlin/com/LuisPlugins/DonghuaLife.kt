@@ -75,13 +75,17 @@ class DonghuaLifeProvider : MainAPI() {
         val document = app.get(url).document
         val title = document.selectFirst("h2 span")?.text() ?: "Desconocido"
         val poster =
-        document.select(".imagen-node img")?.attr("src")?.trim()?.let { fixUrlNull(it) }
+                document.select(".imagen-node img")?.attr("src")?.trim()?.let { fixUrlNull(it) }
         val description = document.selectFirst(".card-body p")?.text()
         val genreTags = document.select("a[href*='/donghuas/']").map { it.text() } // 👈 renombrada
-        val fecha = document.select("time").attr("datetime").toIntOrNull()
+        val fecha =
+                document.selectFirst(".fecha time")
+                        ?.attr("datetime")
+                        ?.substring(0, 4)
+                        ?.toIntOrNull()
 
-         val statusText = document.selectFirst(".estado a")?.text()?.trim()
-         val status =
+        val statusText = document.selectFirst(".estado a")?.text()?.trim()
+        val status =
                 when {
                     statusText?.contains("En Emisión", ignoreCase = true) == true ->
                             ShowStatus.Ongoing
@@ -112,7 +116,7 @@ class DonghuaLifeProvider : MainAPI() {
 
                 episodes.add(
                         newEpisode(epUrl) {
-                           // name = link.text()
+                            // name = link.text()
                             episode = epNumber
                             this.season = seasonNumber
                         }
@@ -124,7 +128,7 @@ class DonghuaLifeProvider : MainAPI() {
             addEpisodes(DubStatus.Subbed, episodes)
             posterUrl = poster
             plot = description
-            tags = genreTags 
+            tags = genreTags
             year = fecha
             showStatus = status
         }
