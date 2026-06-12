@@ -78,7 +78,7 @@ class DonghuaLifeProvider : MainAPI() {
         document.select(".imagen-node img")?.attr("src")?.trim()?.let { fixUrlNull(it) }
         val description = document.selectFirst(".card-body p")?.text()
         val genreTags = document.select("a[href*='/donghuas/']").map { it.text() } // 👈 renombrada
-        val fecha = document.select(".datetime").text().substringAfterLast("Septiembre").toIntOrNull()
+        val fecha = document.select("time").attr("datetime").toIntOrNull()
 
          val statusText = document.selectFirst(".estado a")?.text()?.trim()
          val status =
