@@ -75,9 +75,20 @@ class DonghuaLifeProvider : MainAPI() {
         val document = app.get(url).document
         val title = document.selectFirst("h2 span")?.text() ?: "Desconocido"
         val poster =
-                document.select(".imagen-node img")?.attr("src")?.trim()?.let { fixUrlNull(it) }
+        document.select(".imagen-node img")?.attr("src")?.trim()?.let { fixUrlNull(it) }
         val description = document.selectFirst(".card-body p")?.text()
         val genreTags = document.select("a[href*='/donghuas/']").map { it.text() } // 👈 renombrada
+        val fecha = document.select(".datetime").text().substringAfterLast("Septiembre,").toIntOrNull()
+
+         val statusText = document.selectFirst(".estado a")?.text()?.trim()
+         val status =
+                when {
+                    statusText?.contains("En Emisión", ignoreCase = true) == true ->
+                            ShowStatus.Ongoing
+                    statusText?.contains("Finalizada", ignoreCase = true) == true ->
+                            ShowStatus.Completed
+                    else -> null
+                }
 
         val seasons = document.select(".temporada .serie")
         val episodes = mutableListOf<Episode>()
@@ -113,7 +124,9 @@ class DonghuaLifeProvider : MainAPI() {
             addEpisodes(DubStatus.Subbed, episodes)
             posterUrl = poster
             plot = description
-            tags = genreTags // 👈 ahora referencia la variable externa sin ambigüedad
+            tags = genreTags 
+            year = fecha
+            showStatus = status
         }
     }
     // ===== EXTRACCIÓN DE VIDEOS =====
