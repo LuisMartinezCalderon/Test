@@ -102,7 +102,6 @@ class DonghuaLifeProvider : MainAPI() {
                 episodes.add(
                         newEpisode(epUrl) {
                             name = link.text()
-                            episodes
                             this.season = seasonNumber
                         }
                 )
