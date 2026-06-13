@@ -203,6 +203,13 @@ class DonghuaLifeProvider : MainAPI() {
                 }
             }
         }
+if (videoUrl.contains("rumble.com")) {
+    RumbleExtractor().getUrl(videoUrl, datafix)?.forEach(callback)
+} else if (videoUrl.contains("stremeable.com")) {
+    Stremeable().getUrl(videoUrl, datafix)?.forEach(callback)
+} else {
+    loadExtractor(videoUrl, datafix, subtitleCallback, callback)
+}
 
         return true
     }
