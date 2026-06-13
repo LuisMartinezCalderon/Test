@@ -131,66 +131,7 @@ class RumbleExtractor : ExtractorApi() {
         return links.ifEmpty { null }
     }
 }
-class Stremeable : ExtractorApi() {
-    override var name = "Stremeable"
-    override var mainUrl = "https://stremeable.com"
-    override val requiresReferer = true
 
-    override suspend fun getUrl(
-        url: String,
-        referer: String?
-    ): List<ExtractorLink>? {
-
-        val headers = mapOf(
-            "User-Agent" to USER_AGENT,
-            "Referer" to (referer ?: mainUrl)
-        )
-
-        val response = app.get(url, headers = headers).text
-
-        // Stremeable expone el mp4 en una variable JS: file:"https://...mp4"
-        val mp4Url = Regex("""file\s*:\s*["']([^"']+\.mp4[^"']*)["']""")
-            .find(response)?.groupValues?.get(1)
-            ?: Regex("""source\s+src=["']([^"']+\.mp4[^"']*)["']""")
-                .find(response)?.groupValues?.get(1)
-            ?: Regex("""["'](https?://[^"']+\.mp4[^"']*)["']""")
-                .find(response)?.groupValues?.get(1)
-
-        if (!mp4Url.isNullOrEmpty()) {
-            return listOf(
-                newExtractorLink(
-                    source = name,
-                    name = name,
-                    url = mp4Url,
-                    type = ExtractorLinkType.VIDEO
-                ) {
-                    this.referer = url
-                    this.quality = Qualities.Unknown.value
-                }
-            )
-        }
-
-        // Fallback: m3u8
-        val m3u8Url = Regex("""file\s*:\s*["']([^"']+\.m3u8[^"']*)["']""")
-            .find(response)?.groupValues?.get(1)
-
-        if (!m3u8Url.isNullOrEmpty()) {
-            return listOf(
-                newExtractorLink(
-                    source = name,
-                    name = name,
-                    url = m3u8Url,
-                    type = ExtractorLinkType.M3U8
-                ) {
-                    this.referer = url
-                    this.quality = Qualities.Unknown.value
-                }
-            )
-        }
-
-        return null
-    }
-}
 class OdyseeExtractor : ExtractorApi() {
     override var name = "Odysee"
     override var mainUrl = "https://odysee.com"
@@ -251,5 +192,63 @@ class OdyseeExtractor : ExtractorApi() {
         }
 
         return links.ifEmpty { null }
+    }
+}
+
+class Stremeable : ExtractorApi() {
+    override var name = "Stremeable"
+    override var mainUrl = "https://stremeable.com"
+    override val requiresReferer = true
+
+    override suspend fun getUrl(
+        url: String,
+        referer: String?
+    ): List<ExtractorLink>? {
+        val headers = mapOf(
+            "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+            "Referer" to (referer ?: mainUrl)
+        )
+
+        val response = app.get(url, headers = headers).text
+
+        val mp4Url = Regex("""file\s*:\s*["']([^"']+\.mp4[^"']*)["']""")
+            .find(response)?.groupValues?.get(1)
+            ?: Regex("""source\s+src=["']([^"']+\.mp4[^"']*)["']""")
+                .find(response)?.groupValues?.get(1)
+            ?: Regex("""["'](https?://[^"']+\.mp4[^"']*)["']""")
+                .find(response)?.groupValues?.get(1)
+
+        if (!mp4Url.isNullOrEmpty()) {
+            return listOf(
+                newExtractorLink(
+                    source = name,
+                    name = name,
+                    url = mp4Url,
+                    type = ExtractorLinkType.VIDEO
+                ) {
+                    this.referer = url
+                    this.quality = Qualities.Unknown.value
+                }
+            )
+        }
+
+        val m3u8Url = Regex("""file\s*:\s*["']([^"']+\.m3u8[^"']*)["']""")
+            .find(response)?.groupValues?.get(1)
+
+        if (!m3u8Url.isNullOrEmpty()) {
+            return listOf(
+                newExtractorLink(
+                    source = name,
+                    name = name,
+                    url = m3u8Url,
+                    type = ExtractorLinkType.M3U8
+                ) {
+                    this.referer = url
+                    this.quality = Qualities.Unknown.value
+                }
+            )
+        }
+
+        return null
     }
 }

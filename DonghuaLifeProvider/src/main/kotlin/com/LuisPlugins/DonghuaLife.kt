@@ -203,14 +203,34 @@ class DonghuaLifeProvider : MainAPI() {
                 }
             }
         }
-if (videoUrl.contains("rumble.com")) {
-    RumbleExtractor().getUrl(videoUrl, datafix)?.forEach(callback)
-} else if (videoUrl.contains("stremeable.com")) {
-    Stremeable().getUrl(videoUrl, datafix)?.forEach(callback)
-} else {
-    loadExtractor(videoUrl, datafix, subtitleCallback, callback)
-}
+        document.select("a.toggle-enlace[data-video]").amap { anchor ->
+            val videoUrl = anchor.attr("data-video").trim()
+            val title = anchor.attr("title").trim().lowercase()
 
+            if (videoUrl.startsWith("http")) {
+                when {
+                    title.contains("rumble") ->
+                            RumbleExtractor().getUrl(videoUrl, datafix)?.forEach(callback)
+                    title.contains("stremeable") || title.contains("streamable") ->
+                            Stremeable().getUrl(videoUrl, datafix)?.forEach(callback)
+                    else -> loadExtractor(videoUrl, datafix, subtitleCallback, callback)
+                }
+            }
+        }
+
+        // Fallback iframe
+        document.select("iframe#iframe-episode[src]").amap { iframe ->
+            val src = iframe.attr("src").trim()
+            if (src.startsWith("http")) {
+                when {
+                    src.contains("rumble.com") ->
+                            RumbleExtractor().getUrl(src, datafix)?.forEach(callback)
+                    src.contains("streamable.com") ->
+                            Stremeable().getUrl(src, datafix)?.forEach(callback)
+                    else -> loadExtractor(src, datafix, subtitleCallback, callback)
+                }
+            }
+        }
         return true
     }
 }
