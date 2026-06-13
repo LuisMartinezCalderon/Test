@@ -197,7 +197,7 @@ class OdyseeExtractor : ExtractorApi() {
 
 class Stremeable : ExtractorApi() {
     override var name = "Stremeable"
-    override var mainUrl = "https://stremeable.com"
+    override var mainUrl = "https://streamable.com"
     override val requiresReferer = true
 
     override suspend fun getUrl(
@@ -209,16 +209,25 @@ class Stremeable : ExtractorApi() {
             "Referer" to (referer ?: mainUrl)
         )
 
-        val response = app.get(url, headers = headers).text
+        // Extrae el ID del video de la URL
+        // https://streamable.com/e/pj16a5 → pj16a5
+        val videoId = Regex("""streamable\.com/(?:e/)?([a-zA-Z0-9]+)""")
+            .find(url)?.groupValues?.get(1) ?: return null
 
-        val mp4Url = Regex("""file\s*:\s*["']([^"']+\.mp4[^"']*)["']""")
-            .find(response)?.groupValues?.get(1)
-            ?: Regex("""source\s+src=["']([^"']+\.mp4[^"']*)["']""")
-                .find(response)?.groupValues?.get(1)
-            ?: Regex("""["'](https?://[^"']+\.mp4[^"']*)["']""")
-                .find(response)?.groupValues?.get(1)
+        // Llama a la API pública de Streamable
+        val apiUrl = "https://api.streamable.com/videos/$videoId"
+        val apiResponse = app.get(apiUrl, headers = headers).text
+
+        // La API devuelve JSON con: "files":{"mp4":{"url":"//cdn...mp4","width":...,"height":...}}
+        val mp4Url = Regex(""""mp4"\s*:\s*\{[^}]*"url"\s*:\s*"([^"]+)"""")
+            .find(apiResponse)?.groupValues?.get(1)
+            ?.let { if (it.startsWith("//")) "https:$it" else it }
 
         if (!mp4Url.isNullOrEmpty()) {
+            val height = Regex(""""mp4"\s*:\s*\{[^}]*"height"\s*:\s*(\d+)""")
+                .find(apiResponse)?.groupValues?.get(1)?.toIntOrNull()
+                ?: Qualities.Unknown.value
+
             return listOf(
                 newExtractorLink(
                     source = name,
@@ -227,24 +236,7 @@ class Stremeable : ExtractorApi() {
                     type = ExtractorLinkType.VIDEO
                 ) {
                     this.referer = url
-                    this.quality = Qualities.Unknown.value
-                }
-            )
-        }
-
-        val m3u8Url = Regex("""file\s*:\s*["']([^"']+\.m3u8[^"']*)["']""")
-            .find(response)?.groupValues?.get(1)
-
-        if (!m3u8Url.isNullOrEmpty()) {
-            return listOf(
-                newExtractorLink(
-                    source = name,
-                    name = name,
-                    url = m3u8Url,
-                    type = ExtractorLinkType.M3U8
-                ) {
-                    this.referer = url
-                    this.quality = Qualities.Unknown.value
+                    this.quality = height
                 }
             )
         }
