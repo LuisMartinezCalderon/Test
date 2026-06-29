@@ -76,6 +76,7 @@ class MundoDonghuaProvider : MainAPI() {
                 }
 
         val epsAnchor = document.select("ul li a[href*='/ver/']")
+        epsAnchor.reverse()
 
         return if (epsAnchor.size > 1) {
             val episodes: List<Episode>? =
