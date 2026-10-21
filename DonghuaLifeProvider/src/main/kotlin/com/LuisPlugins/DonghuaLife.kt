@@ -39,7 +39,7 @@ class DonghuaLifeProvider : MainAPI() {
         // 3. Seleccionamos las series
         // El selector .view-donghuas .serie es específico para esta vista y debería funcionar.
         val home =
-                document.select("#block-dlife-content .serie").mapNotNull { it.animeFromElement() }
+                document.select(".poster-grid a").mapNotNull { it.animeFromElement() }
 
         // 4. Lógica para saber si hay más páginas
         // Comprobamos si el enlace "Siguiente" existe y si no tiene la clase 'disabled'
